@@ -1,0 +1,6 @@
+@Synos.Api_HostAddress = http://localhost:5188
+
+GET {{Synos.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
