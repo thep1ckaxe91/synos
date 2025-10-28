@@ -4,6 +4,18 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+// Configure CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: "AllowFrontend",
+                      policy  =>
+                      {
+                          policy.WithOrigins(builder.Configuration["FrontendUrl"])
+                                .AllowAnyHeader()
+                                .AllowAnyMethod();
+                      });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -13,6 +25,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("AllowFrontend");
 
 var summaries = new[]
 {
@@ -21,7 +34,14 @@ var summaries = new[]
 
 app.MapGet("/", () => "Hello from ASP.NET Backend!");
 
+app.MapGet("/api/randomstring", () => GetRandomSummary(summaries));
+
 app.Run();
+
+string GetRandomSummary(string[] summaries)
+{
+    return summaries[Random.Shared.Next(summaries.Length)];
+}
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {

@@ -18,9 +18,11 @@ services:
       context: ./backend/Synos.Api
       dockerfile: ../Dockerfile
     ports:
-      - "8080:80" # Assuming ASP.NET runs on port 80 inside the container
+      - "8080:8080" # ASP.NET application listens on port 8080 inside the container
     depends_on:
       - mariadb
+    env_file:
+      - .env
     command: [ "dotnet", "run" ]
 
   frontend:
