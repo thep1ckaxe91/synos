@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: Docker Image CI + App Runner CD
 
 on:
   push:
@@ -8,18 +8,13 @@ on:
 
 jobs:
 
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
     - name: Build the Docker image
       run: docker build ./backend/Synos.Api --file ./backend/Dockerfile -t aptech/synos-backend
-
-  push:
-    runs-on: ubuntu-latest
-    
-    steps:
     - uses: actions/checkout@v4
     - name: Tag the image
       run: docker tag aptech/synos-backend:latest 472387458149.dkr.ecr.ap-southeast-1.amazonaws.com/aptech/synos-backend:latest
