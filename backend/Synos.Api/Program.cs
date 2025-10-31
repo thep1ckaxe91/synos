@@ -15,6 +15,7 @@ builder.Services.AddCors(options =>
                                 .AllowAnyMethod();
                       });
 });
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
@@ -33,7 +34,7 @@ var summaries = new[]
 };
 
 app.MapGet("/", () => "Hello from ASP.NET Backend!");
-
+app.MapHealthChecks("/api/health");
 app.MapGet("/api/randomstring", () => GetRandomSummary(summaries));
 
 app.Run();
