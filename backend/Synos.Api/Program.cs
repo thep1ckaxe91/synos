@@ -34,7 +34,7 @@ var summaries = new[]
 };
 
 app.MapGet("/", () => "Hello from ASP.NET Backend!");
-app.MapHealthChecks("/api/health");
+app.MapHealthChecks("/api/health"); // fixme: deployed version doesnt work, test locally the api
 app.MapGet("/api/randomstring", () => GetRandomSummary(summaries));
 
 app.Run();

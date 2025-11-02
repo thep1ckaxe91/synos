@@ -6,4 +6,5 @@ RUN yarn install
 RUN yarn build
 
 EXPOSE 3000
-CMD ["npx", "next", "start"]
+# CMD ["npx", "next", "start"]
+CMD ["yarn", "start"]
