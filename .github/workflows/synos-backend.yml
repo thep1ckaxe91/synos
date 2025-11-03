@@ -1,5 +1,8 @@
 name: Docker Image CI + App Runner CD
 
+permissions:
+  id-token: write # for oicd
+  contents: read  # for checkout
 on:
   push:
     branches: [ "deploy-backend" ]
@@ -10,9 +13,6 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     
-    permissions:
-      id-token: write # for oicd
-      contents: read  # for checkout
 
     steps:
     - uses: actions/checkout@v4
