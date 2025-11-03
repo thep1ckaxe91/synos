@@ -21,7 +21,7 @@ services:
       - mariadb
     env_file:
       - .env
-    command: [ "dotnet", "run" ]
+    # command: [ "dotnet", "run" ]
 
   frontend:
     build:
