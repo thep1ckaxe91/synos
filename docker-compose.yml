@@ -29,8 +29,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000" # Next.js default port
-#    depends_on:
-#      - backend
+    depends_on:
+     - backend
 
 volumes:
   mariadb_data:
