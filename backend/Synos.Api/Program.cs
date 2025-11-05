@@ -1,8 +1,55 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Synos.Api.Data;
+using Synos.Api.Middlewares;
+using Synos.Api.Repositories;
+using Synos.Api.Services;
+using System.Text;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+
+// Add Entity Framework
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Register repositories and services
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IMemberRepository, MemberRepository>();
+builder.Services.AddScoped<IMemberService, MemberService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
+
+// Configure JWT Authentication
+var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] ?? "SynosSecretKeyForJWT2025VietnamUTC+7DefaultKey123456789";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "SynosApi";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "SynosClients";
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey)),
+        ValidateIssuer = true,
+        ValidIssuer = jwtIssuer,
+        ValidateAudience = true,
+        ValidAudience = jwtAudience,
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+builder.Services.AddAuthorization();
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -28,23 +75,15 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+// Use authentication and authorization
+app.UseAuthentication();
+app.UseJwtMiddleware(); // Custom JWT middleware
+app.UseAuthorization();
+
+// Map controllers
+app.MapControllers();
 
 app.MapGet("/", () => "Hello from ASP.NET Backend!");
-app.MapHealthChecks("/api/health"); // fixme: deployed version doesnt work, test locally the api
-app.MapGet("/api/randomstring", () => GetRandomSummary(summaries));
+app.MapHealthChecks("/api/health");
 
 app.Run();
-
-string GetRandomSummary(string[] summaries)
-{
-    return summaries[Random.Shared.Next(summaries.Length)];
-}
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
