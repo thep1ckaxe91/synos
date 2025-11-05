@@ -1,17 +1,48 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
-COPY ["Synos.Api.csproj", "./"]
-RUN dotnet restore "Synos.Api.csproj"
+
+# Install EF Core tools globally
+RUN dotnet tool install --global dotnet-ef --version 9.0.0
+ENV PATH="${PATH}:/root/.dotnet/tools"
+
+# Copy csproj từ thư mục Synos.Api
+COPY ["Synos.Api/Synos.Api.csproj", "Synos.Api/"]
+RUN dotnet restore "Synos.Api/Synos.Api.csproj"
+
+# Copy all source code
 COPY . .
-WORKDIR "/src"
+
+# Build the project
+WORKDIR "/src/Synos.Api"
 RUN dotnet build "Synos.Api.csproj" -c Release -o /app/build
 
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+FROM build AS publish
+RUN dotnet publish "Synos.Api.csproj" -c Release -o /app/publish
+
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS final
 WORKDIR /app
-COPY --from=build /app/build .
+
+# Install EF Core tools in final image
+RUN dotnet tool install --global dotnet-ef --version 9.0.0
+ENV PATH="${PATH}:/root/.dotnet/tools"
+
+# Copy published application
+COPY --from=publish /app/publish .
+
+# Copy source code for migrations
+COPY --from=build /src/Synos.Api /app/source
+
+# Copy migration script
+COPY migrate.sh /app/migrate.sh
+
+# Make migration script executable
+RUN chmod +x /app/migrate.sh
+
+# Install netcat and mysql client for database connection testing and verification
+RUN apt-get update && apt-get install -y netcat-openbsd default-mysql-client && rm -rf /var/lib/apt/lists/*
 
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 EXPOSE 8080
 
-ENTRYPOINT ["dotnet", "Synos.Api.dll"]
+ENTRYPOINT ["/app/migrate.sh"]

@@ -49,7 +49,7 @@ namespace Synos.Api.Attributes
                 var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
                 if (string.IsNullOrEmpty(userRole) || !_allowedRoles.Contains(userRole))
                 {
-                    context.Result = new ForbiddenResult();
+                    context.Result = new StatusCodeResult(403);
                     return;
                 }
             }

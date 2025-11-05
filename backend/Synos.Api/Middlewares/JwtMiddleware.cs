@@ -6,21 +6,19 @@ namespace Synos.Api.Middlewares
     public class JwtMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly IJwtService _jwtService;
 
-        public JwtMiddleware(RequestDelegate next, IJwtService jwtService)
+        public JwtMiddleware(RequestDelegate next)
         {
             _next = next;
-            _jwtService = jwtService;
         }
 
-        public async Task InvokeAsync(HttpContext context)
+        public async Task InvokeAsync(HttpContext context, IJwtService jwtService)
         {
             var token = ExtractTokenFromHeader(context.Request);
 
             if (!string.IsNullOrEmpty(token))
             {
-                var principal = _jwtService.ValidateToken(token);
+                var principal = jwtService.ValidateToken(token);
                 if (principal != null)
                 {
                     context.User = principal;

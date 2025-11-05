@@ -12,7 +12,6 @@ namespace Synos.Api.Data
         }
 
         // DbSets for all entities
-        public DbSet<User> Users { get; set; }
         public DbSet<Exhibition> Exhibitions { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Artwork> Artworks { get; set; }
@@ -57,13 +56,13 @@ namespace Synos.Api.Data
                 .HasOne(ea => ea.Exhibition)
                 .WithMany(e => e.ExhibitionArtworks)
                 .HasForeignKey(ea => ea.ExhibitionId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<ExhibitionArtwork>()
                 .HasOne(ea => ea.Artwork)
                 .WithMany(a => a.ExhibitionArtworks)
                 .HasForeignKey(ea => ea.ArtworkId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Cascade);
         }
 
         private void ConfigureArtworks(ModelBuilder modelBuilder)
@@ -72,7 +71,7 @@ namespace Synos.Api.Data
                 .HasOne(a => a.Seller)
                 .WithMany(s => s.Artworks)
                 .HasForeignKey(a => a.SellerId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Artwork>()
                 .HasOne(a => a.Category)
@@ -86,9 +85,10 @@ namespace Synos.Api.Data
                 .HasForeignKey(ai => ai.ArtworkId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Configure Commission relationship
             modelBuilder.Entity<Commission>()
                 .HasOne(c => c.Artwork)
-                .WithMany()
+                .WithMany(a => a.Commissions)
                 .HasForeignKey(c => c.ArtworkId)
                 .OnDelete(DeleteBehavior.SetNull);
         }
@@ -99,7 +99,7 @@ namespace Synos.Api.Data
                 .HasOne(o => o.User)
                 .WithMany(m => m.Orders)
                 .HasForeignKey(o => o.UserId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<OrderItem>()
                 .HasOne(oi => oi.Order)
@@ -111,7 +111,7 @@ namespace Synos.Api.Data
                 .HasOne(oi => oi.Artwork)
                 .WithMany(a => a.OrderItems)
                 .HasForeignKey(oi => oi.ArtworkId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
         }
 
         private void ConfigureFavorites(ModelBuilder modelBuilder)

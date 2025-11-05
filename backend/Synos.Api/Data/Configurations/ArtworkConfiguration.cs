@@ -16,20 +16,17 @@ namespace Synos.Api.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(255);
 
-            builder.Property(a => a.Price)
-                .HasColumnType("decimal(10,2)");
+            builder.Property(a => a.FixedPrice)
+                .HasColumnType("decimal(12,2)");
 
             builder.Property(a => a.Currency)
-                .HasMaxLength(10);
+                .HasMaxLength(3);
 
-            builder.Property(a => a.Dimension)
-                .HasMaxLength(100);
-
-            builder.Property(a => a.Medium)
+            builder.Property(a => a.Dimensions)
                 .HasMaxLength(100);
 
             builder.Property(a => a.Condition)
-                .HasMaxLength(100);
+                .HasMaxLength(150);
 
             // Relationships
             builder.HasOne(a => a.Seller)

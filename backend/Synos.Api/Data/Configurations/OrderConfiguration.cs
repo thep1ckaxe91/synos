@@ -28,8 +28,7 @@ namespace Synos.Api.Data.Configurations
 
             builder.Property(o => o.Status)
                 .IsRequired()
-                .HasMaxLength(50)
-                .HasDefaultValue("pending");
+                .HasDefaultValue(OrderStatus.Pending);
 
             // Relationships
             builder.HasOne(o => o.User)

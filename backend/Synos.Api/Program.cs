@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using Synos.Api.Data;
 using Synos.Api.Middlewares;
 using Synos.Api.Repositories;
@@ -15,19 +16,18 @@ builder.Services.AddOpenApi();
 
 // Add Entity Framework
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"), 
+        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))));
 
-// Register repositories and services
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IUserService, UserService>();
+// Register repositories and services  
 builder.Services.AddScoped<IMemberRepository, MemberRepository>();
 builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 
 // Configure JWT Authentication
-var jwtSecretKey = builder.Configuration["Jwt:SecretKey"] ?? "SynosSecretKeyForJWT2025VietnamUTC+7DefaultKey123456789";
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "SynosApi";
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "SynosClients";
+var jwtSecretKey = builder.Configuration["JwtSettings:SecretKey"] ?? "SynosSecretKeyForJWT2025VietnamUTC+7DefaultKey123456789";
+var jwtIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "SynosApi";
+var jwtAudience = builder.Configuration["JwtSettings:Audience"] ?? "SynosApp";
 
 builder.Services.AddAuthentication(options =>
 {

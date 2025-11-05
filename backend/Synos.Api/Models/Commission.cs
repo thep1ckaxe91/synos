@@ -33,7 +33,6 @@ namespace Synos.Api.Models
         public DateTime? DeletedAt { get; set; }
 
         // Navigation properties
-        [ForeignKey("ArtworkId")]
         public virtual Artwork? Artwork { get; set; }
     }
 }
