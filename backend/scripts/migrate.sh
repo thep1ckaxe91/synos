@@ -40,6 +40,10 @@ fi
 echo "🔍 Verifying tables were created..."
 mysql -h mysql -u synos_user -psynos_password synos_db -e "SHOW TABLES;" || echo "Could not verify tables"
 
+# Run test data seeding
+echo "🌱 Seeding test data..."
+/app/scripts/seed-test-data.sh
+
 # Start the application
 echo "🚀 Starting Synos API..."
 cd /app

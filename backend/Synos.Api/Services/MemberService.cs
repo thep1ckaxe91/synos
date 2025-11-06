@@ -110,7 +110,7 @@ namespace Synos.Api.Services
                     FullName = registerDto.FullName,
                     Phone = registerDto.Phone,
                     Role = role,
-                    IsActive = true,
+                    IsActive = false, // New members are inactive by default
                     CreatedAt = TimeUtils.GetCreateTimestamp(),
                     UpdatedAt = TimeUtils.GetCreateTimestamp()
                 };

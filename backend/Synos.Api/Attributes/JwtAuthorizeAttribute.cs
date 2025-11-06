@@ -95,6 +95,90 @@ namespace Synos.Api.Attributes
     {
         public RequireAuthAttribute() : base() { }
     }
+
+    /// <summary>
+    /// Ensures that users can only access their own resources.
+    /// Checks if the member ID in the route matches the authenticated user's ID.
+    /// Admins can access any resource.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Method)]
+    public class RequireOwnerOrAdminAttribute : Attribute, IAuthorizationFilter
+    {
+        private readonly string _routeParameterName;
+
+        /// <summary>
+        /// Initialize the attribute
+        /// </summary>
+        /// <param name="routeParameterName">The name of the route parameter containing the member ID (default: "id")</param>
+        public RequireOwnerOrAdminAttribute(string routeParameterName = "id")
+        {
+            _routeParameterName = routeParameterName;
+        }
+
+        public void OnAuthorization(AuthorizationFilterContext context)
+        {
+            // Skip authorization for methods marked with [AllowAnonymous]
+            if (context.ActionDescriptor.EndpointMetadata.Any(x => x.GetType() == typeof(Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute)))
+            {
+                return;
+            }
+
+            var user = context.HttpContext.User;
+
+            // Check if user is authenticated
+            if (user == null || !user.Identity!.IsAuthenticated)
+            {
+                context.Result = new UnauthorizedObjectResult(new { message = "Access denied. Authentication required." });
+                return;
+            }
+
+            // Check if user is active
+            var isActiveClaim = user.FindFirst("IsActive");
+            if (isActiveClaim == null || !bool.Parse(isActiveClaim.Value))
+            {
+                context.Result = new UnauthorizedObjectResult(new { message = "Account is deactivated." });
+                return;
+            }
+
+            // Get current user ID from JWT token
+            var currentMemberIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+            if (currentMemberIdClaim == null || !long.TryParse(currentMemberIdClaim.Value, out long currentMemberId))
+            {
+                context.Result = new UnauthorizedObjectResult(new { message = "Invalid token. Member ID not found." });
+                return;
+            }
+
+            // Get current user role
+            var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
+
+            // Admin can access any resource
+            if (userRole == "Admin")
+            {
+                return;
+            }
+
+            // Get the member ID from route parameters
+            var routeData = context.RouteData.Values;
+            if (!routeData.ContainsKey(_routeParameterName))
+            {
+                context.Result = new BadRequestObjectResult(new { message = $"Route parameter '{_routeParameterName}' not found." });
+                return;
+            }
+
+            if (!long.TryParse(routeData[_routeParameterName]?.ToString(), out long requestedMemberId))
+            {
+                context.Result = new BadRequestObjectResult(new { message = $"Invalid {_routeParameterName} format." });
+                return;
+            }
+
+            // Check if the user is trying to access their own resource
+            if (currentMemberId != requestedMemberId)
+            {
+                context.Result = new StatusCodeResult(403); // Forbidden
+                return;
+            }
+        }
+    }
 }
 
 namespace Synos.Api.Extensions

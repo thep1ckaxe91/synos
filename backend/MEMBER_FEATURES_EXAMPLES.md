@@ -2,160 +2,205 @@
 
 ## 📋 Tính năng Member đã implement
 
-### ✅ 1. **Login** - Đăng nhập
-```http
-POST /api/members/login
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
-
-**Response Success:**
+### ✅ 1. Đăng nhập (Login)
+- **Đường dẫn:** `POST /api/members/login`
+- **Dữ liệu gửi đi:**
 ```json
 {
-  "success": true,
-  "message": "Login successful",
+  "email": "string",
+  "password": "string"
+}
+```
+- **Dữ liệu nhận về:**
+```json
+{
+  "success": "boolean",
+  "message": "string",
   "member": {
-    "id": 1,
-    "email": "user@example.com",
-    "fullName": "John Doe",
-    "role": "Customer",
-    "phone": "+1234567890",
-    "isActive": true,
-    "createdAt": "2025-11-04T10:00:00Z"
+    "id": "int",
+    "email": "string",
+    "fullName": "string",
+    "role": "enum(Artist, Customer, Admin)",
+    "phone": "string",
+    "isActive": "boolean",
+    "createdAt": "datetime"
   },
-  "token": "bWVtYmVyXzFfMTM4NzA5ODc2NTQzMjEwMA=="
+  "token": "string"
 }
 ```
 
-### ✅ 2. **Registration** - Đăng ký
-```http
-POST /api/members/register
-Content-Type: application/json
-
-{
-  "email": "newuser@example.com",
-  "password": "securepassword",
-  "fullName": "Jane Smith",
-  "phone": "+1987654321",
-  "role": "Artist"
-}
-```
-
-### ✅ 3. **View Profile** - Xem thông tin cá nhân
-```http
-GET /api/members/profile/1
-```
-
-**Response:**
+### ✅ 2. Đăng ký (Registration)
+- **Đường dẫn:** `POST /api/members/register`
+- **Dữ liệu gửi đi:**
 ```json
 {
-  "id": 1,
-  "email": "user@example.com",
-  "fullName": "John Doe",
-  "role": "Customer",
-  "phone": "+1234567890",
-  "isActive": true,
-  "createdAt": "2025-11-04T10:00:00Z"
+  "email": "string",
+  "password": "string",
+  "fullName": "string",
+  "phone": "string",
+  "role": "enum(Artist, Customer)"
 }
 ```
-
-### ✅ 4. **Update Profile** - Cập nhật thông tin
-```http
-PUT /api/members/profile/1
-Content-Type: application/json
-
+- **Dữ liệu nhận về:**
+```json
 {
-  "fullName": "John Smith Updated",
-  "phone": "+1555666777"
+  "success": "boolean",
+  "message": "string",
+  "member": {
+    "id": "int",
+    "email": "string",
+    "fullName": "string",
+    "role": "enum(Artist, Customer, Admin)",
+    "phone": "string",
+    "isActive": "boolean",
+    "createdAt": "datetime"
+  },
+  "token": "string"
 }
 ```
 
-### ✅ 5. **Change Password** - Đổi mật khẩu
-```http
-POST /api/members/change-password/1
-Content-Type: application/json
-
+### ✅ 3. Xem thông tin cá nhân (View Profile)
+- **Đường dẫn:** `GET /api/members/profile/{id}`
+- **Dữ liệu gửi đi:** Không có (chỉ cần ID trong URL)
+- **Dữ liệu nhận về:**
+```json
 {
-  "currentPassword": "oldpassword",
-  "newPassword": "newpassword123"
+  "id": "int",
+  "email": "string",
+  "fullName": "string",
+  "role": "enum(Artist, Customer, Admin)",
+  "phone": "string",
+  "isActive": "boolean",
+  "createdAt": "datetime"
 }
 ```
 
-### ✅ 6. **View Personal Gallery** - Xem bộ sưu tập yêu thích
-```http
-GET /api/members/gallery/1
+### ✅ 4. Cập nhật thông tin (Update Profile)
+- **Đường dẫn:** `PUT /api/members/profile/{id}`
+- **Dữ liệu gửi đi:**
+```json
+{
+  "fullName": "string (optional)",
+  "phone": "string (optional)"
+}
+```
+- **Dữ liệu nhận về:**
+```json
+{
+  "id": "int",
+  "email": "string",
+  "fullName": "string",
+  "role": "enum(Artist, Customer, Admin)",
+  "phone": "string",
+  "isActive": "boolean",
+  "createdAt": "datetime"
+}
 ```
 
-**Response:**
+### ✅ 5. Đổi mật khẩu (Change Password)
+- **Đường dẫn:** `POST /api/members/change-password/{id}`
+- **Dữ liệu gửi đi:**
+```json
+{
+  "currentPassword": "string",
+  "newPassword": "string"
+}
+```
+- **Dữ liệu nhận về:**
+```json
+{
+  "message": "string"
+}
+```
+
+### ✅ 6. Xem bộ sưu tập cá nhân (View Personal Gallery)
+- **Đường dẫn:** `GET /api/members/gallery/{id}`
+- **Dữ liệu gửi đi:** Không có (chỉ cần ID trong URL)
+- **Dữ liệu nhận về:**
 ```json
 [
   {
-    "artworkId": 101,
-    "artworkTitle": "Sunset Over Mountains",
-    "artworkDescription": "Beautiful landscape painting",
-    "price": 1500.00,
-    "primaryImage": "/images/artworks/101/main.jpg",
-    "artistName": "Van Gogh Jr",
-    "addedAt": "2025-11-04T15:30:00Z"
-  },
-  {
-    "artworkId": 102,
-    "artworkTitle": "Abstract Dreams",
-    "artworkDescription": "Modern abstract art piece",
-    "price": 2200.00,
-    "primaryImage": "/images/artworks/102/main.jpg",
-    "artistName": "Picasso Modern",
-    "addedAt": "2025-11-03T12:15:00Z"
+    "artworkId": "int",
+    "artworkTitle": "string",
+    "artworkDescription": "string",
+    "price": "decimal",
+    "primaryImage": "string",
+    "artistName": "string",
+    "addedAt": "datetime"
   }
 ]
 ```
 
-### ✅ 7. **Add Artwork to Personal Gallery** - Thêm vào yêu thích
-```http
-POST /api/members/gallery/1/add
-Content-Type: application/json
-
-{
-  "artworkId": 103
-}
-```
-
-**Response:**
+### ✅ 7. Thêm artwork vào bộ sưu tập (Add to Gallery)
+- **Đường dẫn:** `POST /api/members/gallery/{id}/add`
+- **Dữ liệu gửi đi:**
 ```json
 {
-  "message": "Artwork added to your personal gallery successfully"
+  "ArtworkId": "int"
 }
 ```
-
-### ✅ 8. **Remove Artwork from Personal Gallery** - Xóa khỏi yêu thích
-```http
-DELETE /api/members/gallery/1/remove/103
-```
-
-**Response:**
+- **Dữ liệu nhận về:**
 ```json
 {
-  "message": "Artwork removed from your personal gallery successfully"
+  "message": "string"
 }
 ```
 
-### ✅ 9. **Logout** - Đăng xuất
-```http
-POST /api/members/logout/1
-```
-
-**Response:**
+### ✅ 8. Xóa artwork khỏi bộ sưu tập (Remove from Gallery)
+- **Đường dẫn:** `DELETE /api/members/gallery/{id}/remove/{artworkId}`
+- **Dữ liệu gửi đi:** Không có (chỉ cần ID trong URL)
+- **Dữ liệu nhận về:**
 ```json
 {
-  "message": "Logged out successfully"
+  "message": "string"
 }
 ```
 
-## 🧪 Testing với curl
+### ✅ 9. Đăng xuất (Logout)
+- **Đường dẫn:** `POST /api/members/logout/{id}`
+- **Dữ liệu gửi đi:** Không có (chỉ cần ID trong URL)
+- **Dữ liệu nhận về:**
+```json
+{
+  "message": "string"
+}
+```
+
+### ✅ 10. Xem thông tin tài khoản hiện tại (Get My Profile)
+- **Đường dẫn:** `GET /api/members/me`
+- **Dữ liệu gửi đi:** Không có (sử dụng JWT token)
+- **Dữ liệu nhận về:**
+```json
+{
+  "id": "int",
+  "email": "string",
+  "fullName": "string",
+  "role": "enum(Artist, Customer, Admin)",
+  "phone": "string",
+  "isActive": "boolean",
+  "createdAt": "datetime"
+}
+```
+
+### ✅ 11. Xem bộ sưu tập của tôi (Get My Gallery)
+- **Đường dẫn:** `GET /api/members/me/gallery`
+- **Dữ liệu gửi đi:** Không có (sử dụng JWT token)
+- **Dữ liệu nhận về:**
+```json
+[
+  {
+    "artworkId": "int",
+    "artworkTitle": "string",
+    "artworkDescription": "string",
+    "price": "decimal",
+    "primaryImage": "string",
+    "artistName": "string",
+    "addedAt": "datetime"
+  }
+]
+```
+
+## 🧪 Testing với curl/Postman
 
 ### Đăng ký Member mới:
 ```bash
@@ -189,8 +234,29 @@ curl -X GET http://localhost:5000/api/members/gallery/1
 ```bash
 curl -X POST http://localhost:5000/api/members/gallery/1/add \
   -H "Content-Type: application/json" \
-  -d '{"artworkId": 101}'
+  -d '{"ArtworkId": 1}'
 ```
+
+### 🔧 Postman Setup cho Authentication:
+1. **Đăng nhập trước:** Gửi request đăng nhập để lấy token
+2. **Copy token từ response:** Lấy giá trị "token" từ kết quả trả về
+3. **Set Authorization:** Trong Postman, tab Authorization → Type: Bearer Token → paste token
+4. **Set Content-Type:** Headers tab → Key: Content-Type, Value: application/json
+5. **Gửi request:** Có thể test các endpoint cần authentication
+
+**⚠️ Lưu ý Bảo mật:**
+- Đảm bảo set đúng Content-Type: application/json
+- Với endpoint Add to Gallery, dùng "ArtworkId" (viết hoa A) thay vì "artworkId"
+- **Resource Owner Check**: User chỉ có thể truy cập resource của chính họ
+  - Nếu đăng nhập với user ID 1, chỉ có thể call `/api/members/profile/1`, không thể call `/api/members/profile/2`
+  - Nếu cố gắng truy cập resource của người khác → HTTP 403 Forbidden
+  - Admin có thể truy cập tất cả resources
+
+### 🔒 Authorization Rules:
+- **GET/PUT /profile/{id}**: Chỉ owner hoặc admin
+- **POST /change-password/{id}**: Chỉ owner hoặc admin  
+- **GET/POST/DELETE /gallery/{id}**: Chỉ owner hoặc admin
+- **POST /logout/{id}**: Chỉ owner hoặc admin
 
 ## 🔐 Security Features
 
@@ -198,7 +264,12 @@ curl -X POST http://localhost:5000/api/members/gallery/1/add \
 - **Email Validation**: Kiểm tra email unique
 - **Soft Delete**: Member bị xóa mềm (deleted_at) thay vì xóa cứng
 - **Active Status**: Kiểm tra tài khoản active khi login
-- **Token-based Auth**: Simple token cho demo (production nên dùng JWT)
+- **JWT Authentication**: Token-based authentication với claims
+- **Resource Owner Authorization**: User chỉ có thể truy cập/chỉnh sửa dữ liệu của chính họ
+  - Member ID 1 chỉ có thể update profile ID 1
+  - Member ID 2 chỉ có thể xem gallery ID 2
+  - Admin có thể truy cập tất cả resources
+- **Role-based Access Control**: Phân quyền theo vai trò (Customer, Artist, Admin)
 
 ## 🎯 Member Roles
 

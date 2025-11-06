@@ -43,7 +43,7 @@ namespace Synos.Api.Controllers
         }
 
         [HttpGet("profile/{id}")]
-        [RequireAuth]
+        [RequireOwnerOrAdmin]
         public async Task<ActionResult<MemberDto>> GetProfile(long id)
         {
             var member = await _memberService.GetMemberProfileAsync(id);
@@ -55,6 +55,7 @@ namespace Synos.Api.Controllers
         }
 
         [HttpPut("profile/{id}")]
+        [RequireOwnerOrAdmin]
         public async Task<ActionResult<MemberDto>> UpdateProfile(long id, [FromBody] UpdateMemberProfileDto updateDto)
         {
             var updatedMember = await _memberService.UpdateProfileAsync(id, updateDto);
@@ -66,6 +67,7 @@ namespace Synos.Api.Controllers
         }
 
         [HttpPost("change-password/{id}")]
+        [RequireOwnerOrAdmin]
         public async Task<IActionResult> ChangePassword(long id, [FromBody] ChangePasswordDto changePasswordDto)
         {
             var success = await _memberService.ChangePasswordAsync(id, changePasswordDto);
@@ -77,6 +79,7 @@ namespace Synos.Api.Controllers
         }
 
         [HttpGet("gallery/{id}")]
+        [RequireOwnerOrAdmin]
         public async Task<ActionResult<IEnumerable<PersonalGalleryDto>>> ViewPersonalGallery(long id)
         {
             var gallery = await _memberService.GetPersonalGalleryAsync(id);
@@ -84,6 +87,7 @@ namespace Synos.Api.Controllers
         }
 
         [HttpPost("gallery/{id}/add")]
+        [RequireOwnerOrAdmin]
         public async Task<IActionResult> AddArtworkToPersonalGallery(long id, [FromBody] AddToGalleryDto addDto)
         {
             var success = await _memberService.AddArtworkToGalleryAsync(id, addDto);
@@ -95,6 +99,7 @@ namespace Synos.Api.Controllers
         }
 
         [HttpDelete("gallery/{id}/remove/{artworkId}")]
+        [RequireOwnerOrAdmin]
         public async Task<IActionResult> RemoveArtworkFromPersonalGallery(long id, long artworkId)
         {
             var success = await _memberService.RemoveArtworkFromGalleryAsync(id, artworkId);
@@ -106,6 +111,7 @@ namespace Synos.Api.Controllers
         }
 
         [HttpPost("logout/{id}")]
+        [RequireOwnerOrAdmin]
         public async Task<IActionResult> Logout(long id)
         {
             var success = await _memberService.LogoutAsync(id);

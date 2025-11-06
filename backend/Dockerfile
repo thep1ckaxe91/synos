@@ -32,11 +32,11 @@ COPY --from=publish /app/publish .
 # Copy source code for migrations
 COPY --from=build /src/Synos.Api /app/source
 
-# Copy migration script
-COPY migrate.sh /app/migrate.sh
+# Copy scripts
+COPY scripts/ /app/scripts/
 
-# Make migration script executable
-RUN chmod +x /app/migrate.sh
+# Make scripts executable
+RUN chmod +x /app/scripts/*.sh
 
 # Install netcat and mysql client for database connection testing and verification
 RUN apt-get update && apt-get install -y netcat-openbsd default-mysql-client && rm -rf /var/lib/apt/lists/*
@@ -45,4 +45,4 @@ ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 EXPOSE 8080
 
-ENTRYPOINT ["/app/migrate.sh"]
+ENTRYPOINT ["/app/scripts/migrate.sh"]
