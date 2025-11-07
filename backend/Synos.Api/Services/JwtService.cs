@@ -1,5 +1,6 @@
 using Microsoft.IdentityModel.Tokens;
 using Synos.Api.Models;
+using Synos.Api.Utils;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -9,11 +10,14 @@ namespace Synos.Api.Services
     public interface IJwtService
     {
         string GenerateToken(Member member);
+        string GenerateAdminToken(Admin admin);
         ClaimsPrincipal? ValidateToken(string token);
         long? GetMemberIdFromToken(string token);
         string? GetEmailFromToken(string token);
         string? GetRoleFromToken(string token);
         bool IsTokenExpired(string token);
+        bool IsAdminToken(string token);
+        TokenInfoDto GetTokenInfo(string token);
     }
 
     public class JwtService : IJwtService
@@ -45,6 +49,7 @@ namespace Synos.Api.Services
                 new Claim(ClaimTypes.Name, member.FullName),
                 new Claim(ClaimTypes.Role, member.Role.ToString()),
                 new Claim("IsActive", member.IsActive.ToString()),
+                new Claim("UserType", "Member"), // Distinguish from Admin
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
             };
@@ -58,7 +63,45 @@ namespace Synos.Api.Services
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddMinutes(_expirationMinutes),
+                Expires = TimeUtils.GetCurrentTime().AddMinutes(_expirationMinutes),
+                Issuer = _issuer,
+                Audience = _audience,
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(key),
+                    SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
+
+        public string GenerateAdminToken(Admin admin)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(_secretKey);
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, admin.Id.ToString()),
+                new Claim(ClaimTypes.Email, admin.Email),
+                new Claim(ClaimTypes.Name, admin.FullName),
+                new Claim(ClaimTypes.Role, "Admin"),
+                new Claim("IsActive", admin.IsActive.ToString()),
+                new Claim("UserType", "Admin"), // Distinguish from Member
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
+            };
+
+            // Add phone if available
+            if (!string.IsNullOrEmpty(admin.Phone))
+            {
+                claims.Add(new Claim("Phone", admin.Phone));
+            }
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = TimeUtils.GetCurrentTime().AddMinutes(_expirationMinutes),
                 Issuer = _issuer,
                 Audience = _audience,
                 SigningCredentials = new SigningCredentials(
@@ -130,12 +173,19 @@ namespace Synos.Api.Services
             {
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var jwtToken = tokenHandler.ReadJwtToken(token);
-                return jwtToken.ValidTo < DateTime.UtcNow;
+                return jwtToken.ValidTo < TimeUtils.GetCurrentTime();
             }
             catch
             {
                 return true;
             }
+        }
+
+        public bool IsAdminToken(string token)
+        {
+            var principal = ValidateToken(token);
+            var userType = principal?.FindFirst("UserType")?.Value;
+            return userType == "Admin";
         }
 
         public TokenInfoDto GetTokenInfo(string token)
@@ -158,7 +208,7 @@ namespace Synos.Api.Services
                 return new TokenInfoDto
                 {
                     IsValid = true,
-                    IsExpired = jwtToken.ValidTo < DateTime.UtcNow,
+                    IsExpired = jwtToken.ValidTo < TimeUtils.GetCurrentTime(),
                     MemberId = GetMemberIdFromToken(token),
                     Email = GetEmailFromToken(token),
                     Role = GetRoleFromToken(token),

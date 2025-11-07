@@ -73,19 +73,90 @@ namespace Synos.Api.Attributes
     }
 
     /// <summary>
-    /// Require Admin role
+    /// Require Admin role (from Admin table, not Member role)
     /// </summary>
-    public class RequireAdminAttribute : JwtAuthorizeAttribute
+    public class RequireAdminAttribute : Attribute, IAuthorizationFilter
     {
-        public RequireAdminAttribute() : base("Admin") { }
+        public void OnAuthorization(AuthorizationFilterContext context)
+        {
+            // Skip authorization for methods marked with [AllowAnonymous]
+            if (context.ActionDescriptor.EndpointMetadata.Any(x => x.GetType() == typeof(Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute)))
+            {
+                return;
+            }
+
+            var user = context.HttpContext.User;
+
+            // Check if user is authenticated
+            if (user == null || !user.Identity!.IsAuthenticated)
+            {
+                context.Result = new UnauthorizedObjectResult(new { message = "Access denied. Authentication required." });
+                return;
+            }
+
+            // Check if user is active
+            var isActiveClaim = user.FindFirst("IsActive");
+            if (isActiveClaim == null || !bool.Parse(isActiveClaim.Value))
+            {
+                context.Result = new UnauthorizedObjectResult(new { message = "Account is deactivated." });
+                return;
+            }
+
+            // Check if user is Admin type AND has Admin role
+            var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
+            var userType = user.FindFirst("UserType")?.Value;
+
+            if (userType != "Admin" || userRole != "Admin")
+            {
+                context.Result = new StatusCodeResult(403); // Forbidden
+                return;
+            }
+        }
     }
 
     /// <summary>
-    /// Require Artist or Admin role
+    /// Require Artist (Member) or Admin role
     /// </summary>
-    public class RequireArtistOrAdminAttribute : JwtAuthorizeAttribute
+    public class RequireArtistOrAdminAttribute : Attribute, IAuthorizationFilter
     {
-        public RequireArtistOrAdminAttribute() : base("Artist", "Admin") { }
+        public void OnAuthorization(AuthorizationFilterContext context)
+        {
+            // Skip authorization for methods marked with [AllowAnonymous]
+            if (context.ActionDescriptor.EndpointMetadata.Any(x => x.GetType() == typeof(Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute)))
+            {
+                return;
+            }
+
+            var user = context.HttpContext.User;
+
+            // Check if user is authenticated
+            if (user == null || !user.Identity!.IsAuthenticated)
+            {
+                context.Result = new UnauthorizedObjectResult(new { message = "Access denied. Authentication required." });
+                return;
+            }
+
+            // Check if user is active
+            var isActiveClaim = user.FindFirst("IsActive");
+            if (isActiveClaim == null || !bool.Parse(isActiveClaim.Value))
+            {
+                context.Result = new UnauthorizedObjectResult(new { message = "Account is deactivated." });
+                return;
+            }
+
+            var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
+            var userType = user.FindFirst("UserType")?.Value;
+
+            // Allow if Admin (from admin table) OR Artist (from member table)
+            bool isAdmin = userType == "Admin" && userRole == "Admin";
+            bool isArtist = userType == "Member" && userRole == "Artist";
+
+            if (!isAdmin && !isArtist)
+            {
+                context.Result = new StatusCodeResult(403); // Forbidden
+                return;
+            }
+        }
     }
 
     /// <summary>
@@ -148,11 +219,12 @@ namespace Synos.Api.Attributes
                 return;
             }
 
-            // Get current user role
+            // Get current user role and type
             var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
+            var userType = user.FindFirst("UserType")?.Value;
 
             // Admin can access any resource
-            if (userRole == "Admin")
+            if (userType == "Admin" && userRole == "Admin")
             {
                 return;
             }
@@ -188,40 +260,77 @@ namespace Synos.Api.Extensions
     /// </summary>
     public static class HttpContextExtensions
     {
-        public static long? GetCurrentMemberId(this HttpContext context)
+        public static long? GetCurrentUserId(this HttpContext context)
         {
-            var memberIdClaim = context.User?.FindFirst(ClaimTypes.NameIdentifier);
-            if (memberIdClaim != null && long.TryParse(memberIdClaim.Value, out long memberId))
+            var userIdClaim = context.User?.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim != null && long.TryParse(userIdClaim.Value, out long userId))
             {
-                return memberId;
+                return userId;
             }
             return null;
         }
 
-        public static string? GetCurrentMemberEmail(this HttpContext context)
+        public static long? GetCurrentMemberId(this HttpContext context)
+        {
+            var userType = context.User?.FindFirst("UserType")?.Value;
+            if (userType == "Member")
+            {
+                return context.GetCurrentUserId();
+            }
+            return null;
+        }
+
+        public static long? GetCurrentAdminId(this HttpContext context)
+        {
+            var userType = context.User?.FindFirst("UserType")?.Value;
+            if (userType == "Admin")
+            {
+                return context.GetCurrentUserId();
+            }
+            return null;
+        }
+
+        public static string? GetCurrentUserEmail(this HttpContext context)
         {
             return context.User?.FindFirst(ClaimTypes.Email)?.Value;
         }
 
-        public static string? GetCurrentMemberRole(this HttpContext context)
+        public static string? GetCurrentUserRole(this HttpContext context)
         {
             return context.User?.FindFirst(ClaimTypes.Role)?.Value;
         }
 
-        public static string? GetCurrentMemberName(this HttpContext context)
+        public static string? GetCurrentUserType(this HttpContext context)
+        {
+            return context.User?.FindFirst("UserType")?.Value;
+        }
+
+        public static string? GetCurrentUserName(this HttpContext context)
         {
             return context.User?.FindFirst(ClaimTypes.Name)?.Value;
         }
 
-        public static bool IsCurrentMemberActive(this HttpContext context)
+        public static bool IsCurrentUserActive(this HttpContext context)
         {
             var isActiveClaim = context.User?.FindFirst("IsActive");
             return isActiveClaim != null && bool.Parse(isActiveClaim.Value);
         }
 
-        public static bool IsCurrentMemberInRole(this HttpContext context, string role)
+        public static bool IsCurrentUserInRole(this HttpContext context, string role)
         {
-            return context.GetCurrentMemberRole()?.Equals(role, StringComparison.OrdinalIgnoreCase) == true;
+            return context.GetCurrentUserRole()?.Equals(role, StringComparison.OrdinalIgnoreCase) == true;
+        }
+
+        public static bool IsCurrentUserAdmin(this HttpContext context)
+        {
+            var userType = context.GetCurrentUserType();
+            var role = context.GetCurrentUserRole();
+            return userType == "Admin" && role == "Admin";
+        }
+
+        public static bool IsCurrentUserMember(this HttpContext context)
+        {
+            return context.GetCurrentUserType() == "Member";
         }
     }
 }

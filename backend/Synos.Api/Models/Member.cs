@@ -1,13 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Synos.Api.Utils;
 
 namespace Synos.Api.Models
 {
     public enum MemberRole
     {
         Customer,
-        Artist,
-        Admin
+        Artist
     }
 
     [Table("members")]
@@ -40,13 +40,13 @@ namespace Synos.Api.Models
         public string? Phone { get; set; }
 
         [Column("created_at")]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = TimeUtils.GetCurrentTime();
 
         [Column("updated_at")]
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = TimeUtils.GetCurrentTime();
 
         [Column("is_active")]
-        public bool IsActive { get; set; } = true;
+        public bool IsActive { get; set; } = false;
 
         [Column("deleted_at")]
         public DateTime? DeletedAt { get; set; }

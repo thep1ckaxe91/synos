@@ -198,11 +198,11 @@ namespace Synos.Api.Services
             return await _memberRepository.RemoveFromFavoritesAsync(memberId, artworkId);
         }
 
-        public async Task<bool> LogoutAsync(long memberId)
+        public Task<bool> LogoutAsync(long memberId)
         {
             // In a real application, you would invalidate the token here
             // For now, just return true as logout is handled client-side
-            return true;
+            return Task.FromResult(true);
         }
 
         private MemberDto MapToMemberDto(Member member)

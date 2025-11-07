@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Synos.Api.Utils;
 
 namespace Synos.Api.Models
 {
@@ -27,7 +28,7 @@ namespace Synos.Api.Models
         public decimal Value { get; set; }
 
         [Column("applied_at")]
-        public DateTime AppliedAt { get; set; } = DateTime.UtcNow;
+        public DateTime AppliedAt { get; set; } = TimeUtils.GetCurrentTime();
 
         [Column("deleted_at")]
         public DateTime? DeletedAt { get; set; }

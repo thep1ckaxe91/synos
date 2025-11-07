@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Synos.Api.Attributes;
-using Synos.Api.Extensions;
 using Synos.Api.Services;
+using System.Security.Claims;
 
 namespace Synos.Api.Controllers
 {
@@ -29,7 +29,7 @@ namespace Synos.Api.Controllers
             if (string.IsNullOrEmpty(tokenDto.Token))
                 return BadRequest(new { message = "Token is required" });
 
-            var tokenInfo = ((JwtService)_jwtService).GetTokenInfo(tokenDto.Token);
+            var tokenInfo = _jwtService.GetTokenInfo(tokenDto.Token);
             return Ok(tokenInfo);
         }
 
@@ -40,17 +40,17 @@ namespace Synos.Api.Controllers
         [RequireAuth]
         public async Task<IActionResult> RefreshToken()
         {
-            var memberId = HttpContext.GetCurrentMemberId();
-            if (memberId == null)
+            var memberIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!long.TryParse(memberIdClaim, out long memberId))
                 return Unauthorized(new { message = "Invalid token" });
 
-            var member = await _memberService.GetMemberProfileAsync(memberId.Value);
+            var member = await _memberService.GetMemberProfileAsync(memberId);
             if (member == null)
                 return NotFound(new { message = "Member not found" });
 
             // Get member entity for token generation
             var memberRepository = HttpContext.RequestServices.GetRequiredService<Repositories.IMemberRepository>();
-            var memberEntity = await memberRepository.GetMemberByIdAsync(memberId.Value);
+            var memberEntity = await memberRepository.GetMemberByIdAsync(memberId);
             
             if (memberEntity == null)
                 return NotFound(new { message = "Member not found" });
@@ -73,11 +73,11 @@ namespace Synos.Api.Controllers
         {
             return Ok(new
             {
-                memberId = HttpContext.GetCurrentMemberId(),
-                email = HttpContext.GetCurrentMemberEmail(),
-                name = HttpContext.GetCurrentMemberName(),
-                role = HttpContext.GetCurrentMemberRole(),
-                isActive = HttpContext.IsCurrentMemberActive()
+                memberId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value,
+                email = User.FindFirst(ClaimTypes.Email)?.Value,
+                name = User.FindFirst(ClaimTypes.Name)?.Value,
+                role = User.FindFirst(ClaimTypes.Role)?.Value,
+                isActive = User.FindFirst("IsActive")?.Value
             });
         }
 
@@ -100,11 +100,12 @@ namespace Synos.Api.Controllers
         [RequireAuth]
         public IActionResult CheckRole(string role)
         {
-            var hasRole = HttpContext.IsCurrentMemberInRole(role);
+            var currentRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            var hasRole = string.Equals(currentRole, role, StringComparison.OrdinalIgnoreCase);
             return Ok(new { 
                 role = role,
                 hasRole = hasRole,
-                currentRole = HttpContext.GetCurrentMemberRole()
+                currentRole = currentRole
             });
         }
 
@@ -117,8 +118,8 @@ namespace Synos.Api.Controllers
         {
             return Ok(new { 
                 message = "This is admin only content",
-                user = HttpContext.GetCurrentMemberName(),
-                role = HttpContext.GetCurrentMemberRole()
+                user = User.FindFirst(ClaimTypes.Name)?.Value,
+                role = User.FindFirst(ClaimTypes.Role)?.Value
             });
         }
 
@@ -131,8 +132,8 @@ namespace Synos.Api.Controllers
         {
             return Ok(new { 
                 message = "This is artist only content",
-                user = HttpContext.GetCurrentMemberName(),
-                role = HttpContext.GetCurrentMemberRole()
+                user = User.FindFirst(ClaimTypes.Name)?.Value,
+                role = User.FindFirst(ClaimTypes.Role)?.Value
             });
         }
 
@@ -145,8 +146,8 @@ namespace Synos.Api.Controllers
         {
             return Ok(new { 
                 message = "This content is for artists and admins",
-                user = HttpContext.GetCurrentMemberName(),
-                role = HttpContext.GetCurrentMemberRole()
+                user = User.FindFirst(ClaimTypes.Name)?.Value,
+                role = User.FindFirst(ClaimTypes.Role)?.Value
             });
         }
     }

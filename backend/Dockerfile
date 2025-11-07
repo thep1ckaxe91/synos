@@ -12,9 +12,9 @@ RUN dotnet restore "Synos.Api/Synos.Api.csproj"
 # Copy all source code
 COPY . .
 
-# Build the project
+# Build the project in Debug mode for migrations (build in place)
 WORKDIR "/src/Synos.Api"
-RUN dotnet build "Synos.Api.csproj" -c Release -o /app/build
+RUN dotnet build "Synos.Api.csproj" -c Debug
 
 FROM build AS publish
 RUN dotnet publish "Synos.Api.csproj" -c Release -o /app/publish
@@ -29,7 +29,7 @@ ENV PATH="${PATH}:/root/.dotnet/tools"
 # Copy published application
 COPY --from=publish /app/publish .
 
-# Copy source code for migrations
+# Copy source code and build artifacts for migrations
 COPY --from=build /src/Synos.Api /app/source
 
 # Copy scripts

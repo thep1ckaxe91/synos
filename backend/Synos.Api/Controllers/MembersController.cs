@@ -4,6 +4,7 @@ using Synos.Api.Attributes;
 using Synos.Api.DTOs;
 using Synos.Api.Extensions;
 using Synos.Api.Services;
+using Synos.Api.Utils;
 
 namespace Synos.Api.Controllers
 {
@@ -179,7 +180,7 @@ namespace Synos.Api.Controllers
         {
             return Ok(new { 
                 status = "healthy", 
-                timestamp = DateTime.UtcNow,
+                timestamp = TimeUtils.GetCurrentTime(),
                 features = new[]
                 {
                     "JWT Authentication",

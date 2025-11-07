@@ -20,7 +20,7 @@
     "id": "int",
     "email": "string",
     "fullName": "string",
-    "role": "enum(Artist, Customer, Admin)",
+    "role": "enum(Artist, Customer)",
     "phone": "string",
     "isActive": "boolean",
     "createdAt": "datetime"
@@ -50,7 +50,7 @@
     "id": "int",
     "email": "string",
     "fullName": "string",
-    "role": "enum(Artist, Customer, Admin)",
+    "role": "enum(Artist, Customer)",
     "phone": "string",
     "isActive": "boolean",
     "createdAt": "datetime"
@@ -90,7 +90,7 @@
   "id": "int",
   "email": "string",
   "fullName": "string",
-  "role": "enum(Artist, Customer, Admin)",
+  "role": "enum(Artist, Customer)",
   "phone": "string",
   "isActive": "boolean",
   "createdAt": "datetime"
@@ -175,7 +175,7 @@
   "id": "int",
   "email": "string",
   "fullName": "string",
-  "role": "enum(Artist, Customer, Admin)",
+  "role": "enum(Artist, Customer)",
   "phone": "string",
   "isActive": "boolean",
   "createdAt": "datetime"
@@ -258,6 +258,50 @@ curl -X POST http://localhost:5000/api/members/gallery/1/add \
 - **GET/POST/DELETE /gallery/{id}**: Chỉ owner hoặc admin
 - **POST /logout/{id}**: Chỉ owner hoặc admin
 
+## 🏢 Admin System (Separate from Members)
+
+### ✅ Admin Login
+- **Đường dẫn:** `POST /api/admin/login`
+- **Dữ liệu gửi đi:**
+```json
+{
+  "email": "string",
+  "password": "string"
+}
+```
+- **Dữ liệu nhận về:**
+```json
+{
+  "success": "boolean",
+  "message": "string",
+  "admin": {
+    "id": "int",
+    "email": "string",
+    "fullName": "string",
+    "phone": "string",
+    "isActive": "boolean",
+    "createdAt": "datetime"
+  },
+  "token": "string (với UserType=Admin, Role=Admin)"
+}
+```
+
+### 🔧 JWT Token Structure:
+**Member Token Claims:**
+- UserType: "Member"
+- Role: "Customer" | "Artist"
+- NameIdentifier: member_id
+
+**Admin Token Claims:**
+- UserType: "Admin"  
+- Role: "Admin"
+- NameIdentifier: admin_id
+
+### ⚡ Key Differences:
+- **Members**: Stored in `members` table, roles: Customer/Artist
+- **Admins**: Stored in `admin` table, separate authentication system
+- **Authorization**: Admin tokens can access any member resource, member tokens restricted to own resources
+
 ## 🔐 Security Features
 
 - **Password Hashing**: Mật khẩu được hash với SHA256 + salt
@@ -271,11 +315,19 @@ curl -X POST http://localhost:5000/api/members/gallery/1/add \
   - Admin có thể truy cập tất cả resources
 - **Role-based Access Control**: Phân quyền theo vai trò (Customer, Artist, Admin)
 
-## 🎯 Member Roles
+### 🎯 User Types & Roles
 
+### 👥 Member Roles (stored in `members` table):
 - **Customer**: Khách hàng mua artwork
 - **Artist**: Nghệ sĩ bán artwork  
-- **Admin**: Quản trị hệ thống
+
+### 🔐 Admin (stored in `admin` table):
+- **Admin**: Quản trị hệ thống - tài khoản riêng biệt, không phải member role
+
+### 📊 Member Status Logic:
+- **Pending**: `is_active = false` AND `deleted_at = null` (chờ duyệt)
+- **Approved**: `is_active = true` AND `deleted_at = null` (đã được duyệt)
+- **Rejected**: `is_active = false` AND `deleted_at = rejection_time` (bị từ chối)
 
 ## 📊 Database Relations
 

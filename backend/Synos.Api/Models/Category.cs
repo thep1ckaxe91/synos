@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Synos.Api.Utils;
 
 namespace Synos.Api.Models
 {
@@ -23,7 +24,7 @@ namespace Synos.Api.Models
         public string? Description { get; set; }
 
         [Column("created_at")]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = TimeUtils.GetCurrentTime();
 
         // Navigation properties
         public virtual ICollection<Artwork> Artworks { get; set; } = new List<Artwork>();

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Synos.Api.Utils;
 
 namespace Synos.Api.Models
 {
@@ -22,7 +23,7 @@ namespace Synos.Api.Models
         public bool IsPrimary { get; set; } = false;
 
         [Column("uploaded_at")]
-        public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UploadedAt { get; set; } = TimeUtils.GetCurrentTime();
 
         [Column("deleted_at")]
         public DateTime? DeletedAt { get; set; }

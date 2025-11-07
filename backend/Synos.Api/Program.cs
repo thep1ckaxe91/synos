@@ -21,7 +21,19 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // Register repositories and services  
 builder.Services.AddScoped<IMemberRepository, MemberRepository>();
+builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+builder.Services.AddScoped<IArtworkRepository, ArtworkRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IExhibitionRepository, ExhibitionRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<ISellerRepository, SellerRepository>();
+builder.Services.AddScoped<IAuctionRepository, AuctionRepository>();
+// TODO: Fix CommissionRepository - model mismatch
+// builder.Services.AddScoped<ICommissionRepository, CommissionRepository>();
+
+// Register services
 builder.Services.AddScoped<IMemberService, MemberService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 
 // Configure JWT Authentication
