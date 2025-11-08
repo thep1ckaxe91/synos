@@ -110,6 +110,8 @@ namespace Synos.Api.Services
                             PrimaryImage = item.Artwork.ArtworkImages?.FirstOrDefault(i => i.IsPrimary)?.FilePath,
                             SoldAt = order.PaymentTime,
                             SalePrice = item.Total,
+                            CommissionAmount = item.CommissionAmount,
+                            PayoutAmount = item.SellerPayoutAmount,
                             BuyerName = order.User?.FullName ?? "N/A"
                         });
                     }

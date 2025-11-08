@@ -54,6 +54,8 @@ namespace Synos.Api.DTOs
         public string? PrimaryImage { get; set; }
         public DateTime SoldAt { get; set; }
         public decimal SalePrice { get; set; }
+        public decimal CommissionAmount { get; set; }
+        public decimal PayoutAmount { get; set; }
         public string BuyerName { get; set; } = string.Empty;
     }
 }
