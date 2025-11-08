@@ -20,7 +20,6 @@ namespace Synos.Api.Repositories
                 .Include(a => a.Artwork)
                     .ThenInclude(aw => aw.ArtworkImages)
                 .Include(a => a.Artwork.Seller)
-                    .ThenInclude(s => s.Member)
                 .Where(a => a.DeletedAt == null)
                 .Skip(skip)
                 .Take(take)
@@ -33,7 +32,6 @@ namespace Synos.Api.Repositories
                 .Include(a => a.Artwork)
                     .ThenInclude(aw => aw.ArtworkImages)
                 .Include(a => a.Artwork.Seller)
-                    .ThenInclude(s => s.Member)
                 .FirstOrDefaultAsync(a => a.Id == id && a.DeletedAt == null);
         }
 
@@ -43,7 +41,6 @@ namespace Synos.Api.Repositories
                 .Include(a => a.Artwork)
                     .ThenInclude(aw => aw.ArtworkImages)
                 .Include(a => a.Artwork.Seller)
-                    .ThenInclude(s => s.Member)
                 .FirstOrDefaultAsync(a => a.ArtworkId == artworkId && a.DeletedAt == null);
         }
 
@@ -54,7 +51,6 @@ namespace Synos.Api.Repositories
                 .Include(a => a.Artwork)
                     .ThenInclude(aw => aw.ArtworkImages)
                 .Include(a => a.Artwork.Seller)
-                    .ThenInclude(s => s.Member)
                 .Where(a => a.DeletedAt == null && 
                            a.StartTime <= currentTime && 
                            a.EndTime > currentTime)
@@ -68,7 +64,6 @@ namespace Synos.Api.Repositories
                 .Include(a => a.Artwork)
                     .ThenInclude(aw => aw.ArtworkImages)
                 .Include(a => a.Artwork.Seller)
-                    .ThenInclude(s => s.Member)
                 .Where(a => a.DeletedAt == null && a.StartTime > currentTime)
                 .OrderBy(a => a.StartTime)
                 .ToListAsync();
@@ -81,7 +76,6 @@ namespace Synos.Api.Repositories
                 .Include(a => a.Artwork)
                     .ThenInclude(aw => aw.ArtworkImages)
                 .Include(a => a.Artwork.Seller)
-                    .ThenInclude(s => s.Member)
                 .Where(a => a.DeletedAt == null && a.EndTime <= currentTime)
                 .OrderByDescending(a => a.EndTime)
                 .ToListAsync();
@@ -173,7 +167,6 @@ namespace Synos.Api.Repositories
                 .Include(a => a.Artwork)
                     .ThenInclude(aw => aw.ArtworkImages)
                 .Include(a => a.Artwork.Seller)
-                    .ThenInclude(s => s.Member)
                 .Where(a => a.DeletedAt == null && a.EndTime <= currentTime)
                 .ToListAsync();
         }
@@ -199,7 +192,6 @@ namespace Synos.Api.Repositories
                 .Include(a => a.Artwork)
                     .ThenInclude(aw => aw.ArtworkImages)
                 .Include(a => a.Artwork.Seller)
-                    .ThenInclude(s => s.Member)
                 .Where(a => a.DeletedAt == null)
                 .OrderByDescending(a => a.CreatedAt)
                 .Take(count)

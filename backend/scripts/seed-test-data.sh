@@ -33,19 +33,13 @@ INSERT INTO categories (id, name, slug, description, created_at) VALUES
 (4, 'Digital Art', 'digital-art', 'Computer-generated and digital artwork', NOW()),
 (5, 'Mixed Media', 'mixed-media', 'Artwork combining multiple mediums', NOW());
 
--- Insert Members (Artists and Buyers)
-INSERT INTO members (id, email, password_hash, full_name, role, phone, created_at, updated_at, is_active) VALUES
-(1, 'artist@synos.com', 'hashed_password_artist123', 'Vincent Artist', 'Artist', '+1234567890', NOW(), NOW(), TRUE),
-(2, 'buyer@synos.com', 'hashed_password_buyer123', 'Art Collector', 'Buyer', '+1987654321', NOW(), NOW(), TRUE),
-(3, 'painter@synos.com', 'hashed_password_painter123', 'Pablo Modern', 'Artist', '+1122334455', NOW(), NOW(), TRUE),
-(4, 'collector@synos.com', 'hashed_password_collector123', 'Gallery Owner', 'Buyer', '+1555666777', NOW(), NOW(), TRUE),
-(5, 'sculptor@synos.com', 'hashed_password_sculptor123', 'Auguste Stone', 'Artist', '+1999888777', NOW(), NOW(), TRUE);
-
--- Insert Sellers (Artist profiles)
-INSERT INTO sellers (id, bio, website, address, profile_image) VALUES
-(1, 'Professional painter with 15 years of experience in contemporary art. Specializes in abstract expressionism and landscape paintings.', 'https://vincentartist.com', '123 Art Street, Paris, France', 'profiles/vincent-artist.jpg'),
-(3, 'Modern painter inspired by cubism and surrealism. Creates vibrant works that challenge traditional perspectives.', 'https://pablomodern.art', '456 Creative Ave, Barcelona, Spain', 'profiles/pablo-modern.jpg'),
-(5, 'Contemporary sculptor working with bronze, marble, and mixed media. Known for large-scale public installations.', 'https://augustestone.studio', '789 Sculpture Way, Florence, Italy', 'profiles/auguste-stone.jpg');
+-- Insert Members (Sellers and Buyers)
+INSERT INTO members (id, email, password_hash, full_name, role, phone, bio, profile_image, created_at, updated_at, is_active) VALUES
+(1, 'seller@synos.com', 'hashed_password_seller123', 'Vincent Artist', 'Seller', '+1234567890', 'Professional painter with 15 years of experience in contemporary art. Specializes in abstract expressionism and landscape paintings.', 'profiles/vincent-artist.jpg', NOW(), NOW(), TRUE),
+(2, 'buyer@synos.com', 'hashed_password_buyer123', 'Art Collector', 'Buyer', '+1987654321', NULL, NULL, NOW(), NOW(), TRUE),
+(3, 'painter@synos.com', 'hashed_password_painter123', 'Pablo Modern', 'Seller', '+1122334455', 'Modern painter inspired by cubism and surrealism. Creates vibrant works that challenge traditional perspectives.', 'profiles/pablo-modern.jpg', NOW(), NOW(), TRUE),
+(4, 'collector@synos.com', 'hashed_password_collector123', 'Gallery Owner', 'Buyer', '+1555666777', NULL, NULL, NOW(), NOW(), TRUE),
+(5, 'sculptor@synos.com', 'hashed_password_sculptor123', 'Auguste Stone', 'Seller', '+1999888777', 'Contemporary sculptor working with bronze, marble, and mixed media. Known for large-scale public installations.', 'profiles/auguste-stone.jpg', NOW(), NOW(), TRUE);
 
 -- Insert Artworks
 INSERT INTO artworks (id, seller_id, title, description, category_id, creation_year, dimensions, `condition`, is_for, fixed_price, currency, status, created_at, updated_at) VALUES
@@ -121,8 +115,7 @@ if [ $? -eq 0 ]; then
     echo "✅ Test data seeded successfully!"
     echo "📊 Summary:"
     echo "   - 5 Categories created"
-    echo "   - 5 Members created (3 Artists, 2 Buyers)"
-    echo "   - 3 Seller profiles created"
+    echo "   - 5 Members created (3 Sellers, 2 Buyers)"
     echo "   - 6 Artworks created"
     echo "   - 8 Artwork images created"
     echo "   - 3 Exhibitions created"
@@ -134,7 +127,7 @@ if [ $? -eq 0 ]; then
     echo "   - 1 Admin created"
     echo ""
     echo "🔑 Test Login Credentials:"
-    echo "   Artist: artist@synos.com / artist123"
+    echo "   Seller: seller@synos.com / seller123"
     echo "   Buyer: buyer@synos.com / buyer123"
     echo "   Admin: admin@synos.com / admin123"
 else

@@ -100,7 +100,7 @@ namespace Synos.Api.Services
                 // Parse role
                 if (!Enum.TryParse<MemberRole>(registerDto.Role, true, out var role))
                 {
-                    role = MemberRole.Customer;
+                    role = MemberRole.Buyer;
                 }
 
                 var member = new Member
@@ -110,6 +110,8 @@ namespace Synos.Api.Services
                     FullName = registerDto.FullName,
                     Phone = registerDto.Phone,
                     Role = role,
+                    Bio = registerDto.Bio,
+                    ProfileImage = registerDto.ProfileImage,
                     IsActive = false, // New members are inactive by default
                     CreatedAt = TimeUtils.GetCreateTimestamp(),
                     UpdatedAt = TimeUtils.GetCreateTimestamp()
@@ -146,7 +148,9 @@ namespace Synos.Api.Services
             var member = new Member
             {
                 FullName = updateDto.FullName,
-                Phone = updateDto.Phone
+                Phone = updateDto.Phone,
+                Bio = updateDto.Bio,
+                ProfileImage = updateDto.ProfileImage
             };
 
             var updatedMember = await _memberRepository.UpdateMemberAsync(memberId, member);
@@ -183,7 +187,7 @@ namespace Synos.Api.Services
                 ArtworkDescription = f.Artwork?.Description,
                 Price = f.Artwork?.FixedPrice,
                 PrimaryImage = f.Artwork?.ArtworkImages?.FirstOrDefault(img => img.IsPrimary)?.FilePath,
-                ArtistName = f.Artwork?.Seller?.Member?.FullName ?? "Unknown Artist",
+                SellerName = f.Artwork?.Seller?.FullName ?? "Unknown Seller",
                 AddedAt = f.CreatedAt
             }).ToList();
         }
@@ -214,6 +218,8 @@ namespace Synos.Api.Services
                 FullName = member.FullName,
                 Role = member.Role.ToString(),
                 Phone = member.Phone,
+                Bio = member.Bio,
+                ProfileImage = member.ProfileImage,
                 IsActive = member.IsActive,
                 CreatedAt = member.CreatedAt
             };

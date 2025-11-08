@@ -57,19 +57,19 @@ namespace Synos.Api.Attributes
     }
 
     /// <summary>
-    /// Require Customer role
+    /// Require Buyer role
     /// </summary>
-    public class RequireCustomerAttribute : JwtAuthorizeAttribute
+    public class RequireBuyerAttribute : JwtAuthorizeAttribute
     {
-        public RequireCustomerAttribute() : base("Customer") { }
+        public RequireBuyerAttribute() : base("Buyer") { }
     }
 
     /// <summary>
-    /// Require Artist role
+    /// Require Seller role
     /// </summary>
-    public class RequireArtistAttribute : JwtAuthorizeAttribute
+    public class RequireSellerAttribute : JwtAuthorizeAttribute
     {
-        public RequireArtistAttribute() : base("Artist") { }
+        public RequireSellerAttribute() : base("Seller") { }
     }
 
     /// <summary>
@@ -115,9 +115,9 @@ namespace Synos.Api.Attributes
     }
 
     /// <summary>
-    /// Require Artist (Member) or Admin role
+    /// Require Seller (Member) or Admin role
     /// </summary>
-    public class RequireArtistOrAdminAttribute : Attribute, IAuthorizationFilter
+    public class RequireSellerOrAdminAttribute : Attribute, IAuthorizationFilter
     {
         public void OnAuthorization(AuthorizationFilterContext context)
         {
@@ -147,11 +147,11 @@ namespace Synos.Api.Attributes
             var userRole = user.FindFirst(ClaimTypes.Role)?.Value;
             var userType = user.FindFirst("UserType")?.Value;
 
-            // Allow if Admin (from admin table) OR Artist (from member table)
+            // Allow if Admin (from admin table) OR Seller (from member table)
             bool isAdmin = userType == "Admin" && userRole == "Admin";
-            bool isArtist = userType == "Member" && userRole == "Artist";
+            bool isSeller = userType == "Member" && userRole == "Seller";
 
-            if (!isAdmin && !isArtist)
+            if (!isAdmin && !isSeller)
             {
                 context.Result = new StatusCodeResult(403); // Forbidden
                 return;

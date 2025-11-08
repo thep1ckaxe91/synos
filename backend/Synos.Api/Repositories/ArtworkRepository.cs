@@ -19,7 +19,6 @@ namespace Synos.Api.Repositories
             return await _context.Artworks
                 .Include(a => a.Category)
                 .Include(a => a.Seller)
-                    .ThenInclude(s => s.Member)
                 .Include(a => a.ArtworkImages)
                 .Where(a => a.DeletedAt == null)
                 .ToListAsync();
@@ -30,7 +29,6 @@ namespace Synos.Api.Repositories
             return await _context.Artworks
                 .Include(a => a.Category)
                 .Include(a => a.Seller)
-                    .ThenInclude(s => s.Member)
                 .Include(a => a.ArtworkImages)
                 .FirstOrDefaultAsync(a => a.Id == id && a.DeletedAt == null);
         }
@@ -49,7 +47,6 @@ namespace Synos.Api.Repositories
             return await _context.Artworks
                 .Include(a => a.Category)
                 .Include(a => a.Seller)
-                    .ThenInclude(s => s.Member)
                 .Include(a => a.ArtworkImages)
                 .Where(a => a.CategoryId == categoryId && a.DeletedAt == null)
                 .ToListAsync();
@@ -60,7 +57,6 @@ namespace Synos.Api.Repositories
             return await _context.Artworks
                 .Include(a => a.Category)
                 .Include(a => a.Seller)
-                    .ThenInclude(s => s.Member)
                 .Include(a => a.ArtworkImages)
                 .Where(a => a.Status == status && a.DeletedAt == null)
                 .ToListAsync();
@@ -114,7 +110,6 @@ namespace Synos.Api.Repositories
             return await _context.Artworks
                 .Include(a => a.Category)
                 .Include(a => a.Seller)
-                    .ThenInclude(s => s.Member)
                 .Include(a => a.ArtworkImages)
                 .Where(a => a.DeletedAt == null &&
                            (a.Title.Contains(searchTerm) || 
@@ -172,7 +167,6 @@ namespace Synos.Api.Repositories
             return await _context.Artworks
                 .Include(a => a.Category)
                 .Include(a => a.Seller)
-                    .ThenInclude(s => s.Member)
                 .Include(a => a.ArtworkImages)
                 .Where(a => a.DeletedAt == null)
                 .Skip(skip)
@@ -185,7 +179,6 @@ namespace Synos.Api.Repositories
             return await _context.Artworks
                 .Include(a => a.Category)
                 .Include(a => a.Seller)
-                    .ThenInclude(s => s.Member)
                 .Include(a => a.ArtworkImages)
                 .Where(a => a.Status == ArtworkStatus.Available && a.DeletedAt == null)
                 .ToListAsync();
@@ -201,7 +194,6 @@ namespace Synos.Api.Repositories
             return await _context.Artworks
                 .Include(a => a.Category)
                 .Include(a => a.Seller)
-                    .ThenInclude(s => s.Member)
                 .Include(a => a.ArtworkImages)
                 .Where(a => a.Status == ArtworkStatus.Pending && a.DeletedAt == null)
                 .ToListAsync();
@@ -259,7 +251,6 @@ namespace Synos.Api.Repositories
             return await _context.Artworks
                 .Include(a => a.Category)
                 .Include(a => a.Seller)
-                    .ThenInclude(s => s.Member)
                 .Include(a => a.ArtworkImages)
                 .Where(a => a.DeletedAt == null)
                 .OrderByDescending(a => a.CreatedAt)

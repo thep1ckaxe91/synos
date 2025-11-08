@@ -9,6 +9,8 @@ namespace Synos.Api.DTOs
         public string? Phone { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string? Bio { get; set; }
+        public string? ProfileImage { get; set; }
     }
 
     public class MemberLoginDto
@@ -23,13 +25,17 @@ namespace Synos.Api.DTOs
         public string Password { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string? Phone { get; set; }
-        public string Role { get; set; } = "Customer";
+        public string Role { get; set; } = "Buyer";
+        public string? Bio { get; set; }
+        public string? ProfileImage { get; set; }
     }
 
     public class UpdateMemberProfileDto
     {
         public string FullName { get; set; } = string.Empty;
         public string? Phone { get; set; }
+        public string? Bio { get; set; }
+        public string? ProfileImage { get; set; }
     }
 
     public class ChangePasswordDto
@@ -45,7 +51,7 @@ namespace Synos.Api.DTOs
         public string? ArtworkDescription { get; set; }
         public decimal? Price { get; set; }
         public string? PrimaryImage { get; set; }
-        public string ArtistName { get; set; } = string.Empty;
+        public string SellerName { get; set; } = string.Empty;
         public DateTime AddedAt { get; set; }
     }
 

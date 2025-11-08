@@ -35,7 +35,6 @@ namespace Synos.Api.Repositories
                 .Include(e => e.ExhibitionArtworks)
                     .ThenInclude(ea => ea.Artwork)
                         .ThenInclude(a => a.Seller)
-                            .ThenInclude(s => s.Member)
                 .FirstOrDefaultAsync(e => e.Id == id && e.DeletedAt == null);
         }
 
@@ -134,7 +133,6 @@ namespace Synos.Api.Repositories
                     .ThenInclude(a => a.ArtworkImages)
                 .Include(ea => ea.Artwork)
                     .ThenInclude(a => a.Seller)
-                        .ThenInclude(s => s.Member)
                 .Include(ea => ea.Exhibition)
                 .ToListAsync();
         }
@@ -159,7 +157,6 @@ namespace Synos.Api.Repositories
                 .Select(ea => ea.Artwork)
                 .Include(a => a.ArtworkImages)
                 .Include(a => a.Seller)
-                    .ThenInclude(s => s.Member)
                 .Include(a => a.Category)
                 .ToListAsync();
         }

@@ -26,7 +26,6 @@ builder.Services.AddScoped<IArtworkRepository, ArtworkRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IExhibitionRepository, ExhibitionRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-builder.Services.AddScoped<ISellerRepository, SellerRepository>();
 builder.Services.AddScoped<IAuctionRepository, AuctionRepository>();
 // TODO: Fix CommissionRepository - model mismatch
 // builder.Services.AddScoped<ICommissionRepository, CommissionRepository>();

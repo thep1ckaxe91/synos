@@ -74,7 +74,7 @@ namespace Synos.Api.Models
 
         // Navigation properties
         [ForeignKey("SellerId")]
-        public virtual Seller Seller { get; set; } = null!;
+        public virtual Member Seller { get; set; } = null!;
 
         [ForeignKey("CategoryId")]
         public virtual Category? Category { get; set; }

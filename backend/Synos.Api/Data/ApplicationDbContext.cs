@@ -15,7 +15,6 @@ namespace Synos.Api.Data
         public DbSet<Exhibition> Exhibitions { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Artwork> Artworks { get; set; }
-        public DbSet<Seller> Sellers { get; set; }
         public DbSet<Commission> Commissions { get; set; }
         public DbSet<ArtworkImage> ArtworkImages { get; set; }
         public DbSet<ExhibitionArtwork> ExhibitionArtworks { get; set; }
@@ -39,7 +38,6 @@ namespace Synos.Api.Data
             
             // Configure relationships and constraints
             ConfigureMembers(modelBuilder);
-            ConfigureSellers(modelBuilder);
             ConfigureExhibitions(modelBuilder);
             ConfigureArtworks(modelBuilder);
             ConfigureOrders(modelBuilder);
@@ -151,16 +149,6 @@ namespace Synos.Api.Data
             modelBuilder.Entity<Admin>()
                 .HasIndex(a => a.Email)
                 .IsUnique();
-        }
-
-        private void ConfigureSellers(ModelBuilder modelBuilder)
-        {
-            // Seller has one-to-one relationship with Member
-            modelBuilder.Entity<Seller>()
-                .HasOne(s => s.Member)
-                .WithOne(m => m.Seller)
-                .HasForeignKey<Seller>(s => s.Id)
-                .OnDelete(DeleteBehavior.Cascade);
         }
 
         private void ConfigureAuctions(ModelBuilder modelBuilder)

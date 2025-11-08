@@ -6,8 +6,8 @@ namespace Synos.Api.Models
 {
     public enum MemberRole
     {
-        Customer,
-        Artist
+        Buyer,
+        Seller
     }
 
     [Table("members")]
@@ -33,7 +33,7 @@ namespace Synos.Api.Models
         public string FullName { get; set; } = string.Empty;
 
         [Column("role")]
-        public MemberRole Role { get; set; } = MemberRole.Customer;
+        public MemberRole Role { get; set; } = MemberRole.Buyer;
 
         [Column("phone")]
         [MaxLength(50)]
@@ -51,10 +51,18 @@ namespace Synos.Api.Models
         [Column("deleted_at")]
         public DateTime? DeletedAt { get; set; }
 
+        // Seller-specific properties (only used when Role = Seller)
+        [Column("bio")]
+        public string? Bio { get; set; }
+
+        [Column("profile_image")]
+        [MaxLength(255)]
+        public string? ProfileImage { get; set; }
+
         // Navigation properties
-        public virtual Seller? Seller { get; set; }
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
         public virtual ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();
         public virtual ICollection<Auction> WonAuctions { get; set; } = new List<Auction>();
+        public virtual ICollection<Artwork> Artworks { get; set; } = new List<Artwork>();
     }
 }

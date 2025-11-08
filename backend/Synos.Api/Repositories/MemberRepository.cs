@@ -78,7 +78,6 @@ namespace Synos.Api.Repositories
                 .Include(f => f.Artwork)
                     .ThenInclude(a => a.ArtworkImages.Where(img => img.IsPrimary))
                 .Include(f => f.Artwork.Seller)
-                    .ThenInclude(s => s.Member)
                 .Where(f => f.UserId == memberId)
                 .OrderByDescending(f => f.CreatedAt)
                 .ToListAsync();

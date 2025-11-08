@@ -124,28 +124,28 @@ namespace Synos.Api.Controllers
         }
 
         /// <summary>
-        /// Artist only endpoint for testing
+        /// Seller only endpoint for testing
         /// </summary>
-        [HttpGet("artist-only")]
-        [RequireArtist]
-        public IActionResult ArtistOnly()
+        [HttpGet("seller-only")]
+        [RequireSeller]
+        public IActionResult SellerOnly()
         {
             return Ok(new { 
-                message = "This is artist only content",
+                message = "This is seller only content",
                 user = User.FindFirst(ClaimTypes.Name)?.Value,
                 role = User.FindFirst(ClaimTypes.Role)?.Value
             });
         }
 
         /// <summary>
-        /// Artist or Admin endpoint for testing
+        /// Seller or Admin endpoint for testing
         /// </summary>
-        [HttpGet("artist-or-admin")]
-        [RequireArtistOrAdmin]
-        public IActionResult ArtistOrAdmin()
+        [HttpGet("seller-or-admin")]
+        [RequireSellerOrAdmin]
+        public IActionResult SellerOrAdmin()
         {
             return Ok(new { 
-                message = "This content is for artists and admins",
+                message = "This content is for sellers and admins",
                 user = User.FindFirst(ClaimTypes.Name)?.Value,
                 role = User.FindFirst(ClaimTypes.Role)?.Value
             });

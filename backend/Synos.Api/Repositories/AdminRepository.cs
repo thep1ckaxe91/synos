@@ -79,7 +79,6 @@ namespace Synos.Api.Repositories
         {
             return await _context.Members
                 .Include(m => m.Orders)
-                .Include(m => m.Seller)
                 .Where(m => m.DeletedAt == null || m.DeletedAt != null) // Include all members for admin
                 .Select(m => new AdminMemberViewDto
                 {
@@ -105,7 +104,6 @@ namespace Synos.Api.Repositories
         {
             return await _context.Members
                 .Include(m => m.Orders)
-                .Include(m => m.Seller)
                 .Include(m => m.Favorites)
                 .Where(m => m.Id == memberId)
                 .Select(m => new AdminMemberViewDto
@@ -141,7 +139,6 @@ namespace Synos.Api.Repositories
         {
             return await _context.Artworks
                 .Include(a => a.Seller)
-                    .ThenInclude(s => s.Member)
                 .Include(a => a.Category)
                 .Include(a => a.ArtworkImages)
                 .Include(a => a.OrderItems)
@@ -164,8 +161,8 @@ namespace Synos.Api.Repositories
                     CreatedAt = a.CreatedAt,
                     UpdatedAt = a.UpdatedAt,
                     DeletedAt = a.DeletedAt,
-                    SellerName = a.Seller.Member.FullName,
-                    SellerEmail = a.Seller.Member.Email,
+                    SellerName = a.Seller.FullName,
+                    SellerEmail = a.Seller.Email,
                     PrimaryImageUrl = a.ArtworkImages.FirstOrDefault(img => img.IsPrimary) != null ? 
                         a.ArtworkImages.FirstOrDefault(img => img.IsPrimary)!.FilePath : null,
                     TotalImages = a.ArtworkImages.Count,
@@ -182,7 +179,6 @@ namespace Synos.Api.Repositories
         {
             return await _context.Artworks
                 .Include(a => a.Seller)
-                    .ThenInclude(s => s.Member)
                 .Include(a => a.Category)
                 .Include(a => a.ArtworkImages)
                 .Include(a => a.OrderItems)
@@ -206,8 +202,8 @@ namespace Synos.Api.Repositories
                     CreatedAt = a.CreatedAt,
                     UpdatedAt = a.UpdatedAt,
                     DeletedAt = a.DeletedAt,
-                    SellerName = a.Seller.Member.FullName,
-                    SellerEmail = a.Seller.Member.Email,
+                    SellerName = a.Seller.FullName,
+                    SellerEmail = a.Seller.Email,
                     PrimaryImageUrl = a.ArtworkImages.FirstOrDefault(img => img.IsPrimary) != null ? 
                         a.ArtworkImages.FirstOrDefault(img => img.IsPrimary)!.FilePath : null,
                     TotalImages = a.ArtworkImages.Count,
@@ -230,7 +226,6 @@ namespace Synos.Api.Repositories
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Artwork)
                     .ThenInclude(a => a.Seller)
-                    .ThenInclude(s => s.Member)
                 .Select(o => new TransactionMonitorDto
                 {
                     Id = o.Id,
@@ -250,7 +245,7 @@ namespace Synos.Api.Repositories
                     {
                         ArtworkId = oi.ArtworkId,
                         ArtworkTitle = oi.Artwork.Title,
-                        SellerName = oi.Artwork.Seller.Member.FullName,
+                        SellerName = oi.Artwork.Seller.FullName,
                         Price = oi.Total
                     }).ToList(),
                     TotalItems = o.OrderItems.Count
@@ -268,7 +263,6 @@ namespace Synos.Api.Repositories
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Artwork)
                     .ThenInclude(a => a.Seller)
-                    .ThenInclude(s => s.Member)
                 .Where(o => o.CreatedAt >= startDate && o.CreatedAt <= endDate)
                 .Select(o => new TransactionMonitorDto
                 {
@@ -289,7 +283,7 @@ namespace Synos.Api.Repositories
                     {
                         ArtworkId = oi.ArtworkId,
                         ArtworkTitle = oi.Artwork.Title,
-                        SellerName = oi.Artwork.Seller.Member.FullName,
+                        SellerName = oi.Artwork.Seller.FullName,
                         Price = oi.Total
                     }).ToList(),
                     TotalItems = o.OrderItems.Count
@@ -307,7 +301,6 @@ namespace Synos.Api.Repositories
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Artwork)
                     .ThenInclude(a => a.Seller)
-                    .ThenInclude(s => s.Member)
                 .Where(o => o.Id == orderId)
                 .Select(o => new TransactionMonitorDto
                 {
@@ -328,7 +321,7 @@ namespace Synos.Api.Repositories
                     {
                         ArtworkId = oi.ArtworkId,
                         ArtworkTitle = oi.Artwork.Title,
-                        SellerName = oi.Artwork.Seller.Member.FullName,
+                        SellerName = oi.Artwork.Seller.FullName,
                         Price = oi.Total
                     }).ToList(),
                     TotalItems = o.OrderItems.Count
@@ -490,7 +483,6 @@ namespace Synos.Api.Repositories
             // For now, return most favorited artworks as a proxy for "most viewed"
             return await _context.Artworks
                 .Include(a => a.Seller)
-                    .ThenInclude(s => s.Member)
                 .Include(a => a.Category)
                 .Include(a => a.Favorites)
                 .Include(a => a.ArtworkImages)
@@ -515,8 +507,8 @@ namespace Synos.Api.Repositories
                     CreatedAt = a.CreatedAt,
                     UpdatedAt = a.UpdatedAt,
                     DeletedAt = a.DeletedAt,
-                    SellerName = a.Seller.Member.FullName,
-                    SellerEmail = a.Seller.Member.Email,
+                    SellerName = a.Seller.FullName,
+                    SellerEmail = a.Seller.Email,
                     PrimaryImageUrl = a.ArtworkImages.FirstOrDefault(img => img.IsPrimary) != null ? 
                         a.ArtworkImages.FirstOrDefault(img => img.IsPrimary)!.FilePath : null,
                     TotalImages = a.ArtworkImages.Count,
@@ -571,7 +563,6 @@ namespace Synos.Api.Repositories
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Artwork)
                         .ThenInclude(a => a.Seller)
-                            .ThenInclude(s => s.Member)
                 .Where(o => o.Status == OrderStatus.Pending && o.DeletedAt == null)
                 .OrderBy(o => o.CreatedAt)
                 .Skip(skip)
@@ -595,7 +586,7 @@ namespace Synos.Api.Repositories
                     {
                         ArtworkId = oi.ArtworkId,
                         ArtworkTitle = oi.Artwork.Title,
-                        SellerName = oi.Artwork.Seller.Member.FullName,
+                        SellerName = oi.Artwork.Seller.FullName,
                         Price = oi.Artwork.FixedPrice ?? 0
                     }).ToList()
                 })
