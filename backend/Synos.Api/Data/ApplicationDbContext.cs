@@ -24,6 +24,7 @@ namespace Synos.Api.Data
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<Auction> Auctions { get; set; }
         public DbSet<Favorite> Favorites { get; set; }
+        public DbSet<CommissionPayment> CommissionPayments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -43,9 +44,25 @@ namespace Synos.Api.Data
             ConfigureOrders(modelBuilder);
             ConfigureFavorites(modelBuilder);
             ConfigureAuctions(modelBuilder);
+            ConfigureCommissionPayments(modelBuilder);
             
             // Configure enums
             ConfigureEnums(modelBuilder);
+        }
+
+        private void ConfigureCommissionPayments(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<CommissionPayment>()
+                .HasOne(cp => cp.Seller)
+                .WithMany() // A member can have multiple commission payments
+                .HasForeignKey(cp => cp.SellerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CommissionPayment>()
+                .HasOne(cp => cp.OrderItem)
+                .WithMany() // An order item leads to one commission payment
+                .HasForeignKey(cp => cp.OrderItemId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
 
         private void ConfigureExhibitions(ModelBuilder modelBuilder)
@@ -191,6 +208,10 @@ namespace Synos.Api.Data
 
             modelBuilder.Entity<Commission>()
                 .Property(c => c.CommissionType)
+                .HasConversion<string>();
+            
+            modelBuilder.Entity<CommissionPayment>()
+                .Property(cp => cp.Status)
                 .HasConversion<string>();
         }
     }

@@ -45,6 +45,18 @@ namespace Synos.Api.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Order>> GetOrdersBySellerIdAsync(long sellerId)
+        {
+            return await _context.Orders
+                .Include(o => o.User) // This is the buyer
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Artwork)
+                        .ThenInclude(a => a.ArtworkImages)
+                .Where(o => o.OrderItems.Any(oi => oi.Artwork.SellerId == sellerId) && o.DeletedAt == null)
+                .OrderByDescending(o => o.CreatedAt)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<Order>> GetOrdersByStatusAsync(OrderStatus status)
         {
             return await _context.Orders
