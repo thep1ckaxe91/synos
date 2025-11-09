@@ -4,7 +4,22 @@
 
 Seller kế thừa tất cả các tính năng của Member và có thêm các tính năng sau:
 
-### ✅ 1. Tải lên Artwork (Upload Artwork) 
+### ✅ 1. Tải lên ảnh Artwork (Upload Artwork Images)
+- **Đường dẫn:** `POST /api/seller/artworks/upload`
+- **Authorization:** `[JwtAuthorize("Seller")]`
+- **Dữ liệu gửi đi:** `multipart/form-data` với một hoặc nhiều file ảnh.
+- **Dữ liệu nhận về:**
+```json
+{
+  "urls": [
+    "string", // URL của ảnh đã upload
+    "string"
+  ]
+}
+```
+- **Lưu ý:** Endpoint này chỉ dùng để tải file ảnh lên và trả về URL. Bạn cần sử dụng các URL này để tạo Artwork.
+
+### ✅ 2. Tạo Artwork (Create Artwork)
 - **Đường dẫn:** `POST /api/seller/artworks`
 - **Authorization:** `[JwtAuthorize("Seller")]`
 - **Dữ liệu gửi đi:**
@@ -16,7 +31,7 @@ Seller kế thừa tất cả các tính năng của Member và có thêm các t
   "saleType": "enum(FixedPrice, Auction)",
   "categoryId": "long",
   "imageUrls": [
-    "string"
+    "string" // Các URL nhận được từ bước Tải lên ảnh Artwork
   ]
 }
 ```
@@ -36,7 +51,7 @@ Seller kế thừa tất cả các tính năng của Member và có thêm các t
 ```
 - **Lưu ý:** Artwork sẽ có trạng thái `Pending` và cần được Admin duyệt.
 
-### ✅ 2. Xem các Artwork của tôi (View My Artworks)
+### ✅ 3. Xem các Artwork của tôi (View My Artworks)
 - **Đường dẫn:** `GET /api/seller/artworks`
 - **Authorization:** `[JwtAuthorize("Seller")]`
 - **Dữ liệu gửi đi:** Không có
@@ -57,7 +72,7 @@ Seller kế thừa tất cả các tính năng của Member và có thêm các t
 ]
 ```
 
-### ✅ 3. Xem lịch sử bán hàng (View Sales History)
+### ✅ 4. Xem lịch sử bán hàng (View Sales History)
 - **Đường dẫn:** `GET /api/seller/sales-history`
 - **Authorization:** `[JwtAuthorize("Seller")]`
 - **Dữ liệu gửi đi:** Không có
@@ -93,7 +108,17 @@ curl -X POST http://localhost:5000/api/members/register \
 ```
 (Sau khi đăng ký, bạn cần đăng nhập để lấy JWT token)
 
-### Tải lên Artwork:
+### Tải lên ảnh Artwork:
+```bash
+curl -X POST http://localhost:5000/api/seller/artworks/upload \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -F "files=@/path/to/your/image1.jpg" \
+  -F "files=@/path/to/your/image2.png"
+# Kết quả trả về sẽ là một JSON chứa các URL của ảnh đã upload.
+# Ví dụ: {"urls": ["http://localhost:5000/uploads/artworks/unique-id_image1.jpg", "http://localhost:5000/uploads/artworks/unique-id_image2.png"]}
+```
+
+### Tạo Artwork (sử dụng URL từ bước trên):
 ```bash
 curl -X POST http://localhost:5000/api/seller/artworks \
   -H "Content-Type: application/json" \
@@ -104,7 +129,7 @@ curl -X POST http://localhost:5000/api/seller/artworks \
     "price": 1500.00,
     "saleType": "FixedPrice",
     "categoryId": 1,
-    "imageUrls": ["http://example.com/image1.jpg", "http://example.com/image2.jpg"]
+    "imageUrls": ["http://localhost:5000/uploads/artworks/unique-id_image1.jpg", "http://localhost:5000/uploads/artworks/unique-id_image2.png"]
   }'
 ```
 
