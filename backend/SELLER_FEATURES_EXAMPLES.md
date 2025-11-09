@@ -5,8 +5,8 @@
 Seller kế thừa tất cả các tính năng của Member và có thêm các tính năng sau:
 
 ### ✅ 1. Tải lên Artwork (Upload Artwork) 
-- **Đường dẫn:** `POST /api/sellers/artworks`
-- **Authorization:** `[Authorize(Roles = "Seller")]`
+- **Đường dẫn:** `POST /api/seller/artworks`
+- **Authorization:** `[JwtAuthorize("Seller")]`
 - **Dữ liệu gửi đi:**
 ```json
 {
@@ -37,8 +37,8 @@ Seller kế thừa tất cả các tính năng của Member và có thêm các t
 - **Lưu ý:** Artwork sẽ có trạng thái `Pending` và cần được Admin duyệt.
 
 ### ✅ 2. Xem các Artwork của tôi (View My Artworks)
-- **Đường dẫn:** `GET /api/sellers/artworks`
-- **Authorization:** `[Authorize(Roles = "Seller")]`
+- **Đường dẫn:** `GET /api/seller/artworks`
+- **Authorization:** `[JwtAuthorize("Seller")]`
 - **Dữ liệu gửi đi:** Không có
 - **Dữ liệu nhận về:**
 ```json
@@ -58,8 +58,8 @@ Seller kế thừa tất cả các tính năng của Member và có thêm các t
 ```
 
 ### ✅ 3. Xem lịch sử bán hàng (View Sales History)
-- **Đường dẫn:** `GET /api/sellers/sales-history`
-- **Authorization:** `[Authorize(Roles = "Seller")]`
+- **Đường dẫn:** `GET /api/seller/sales-history`
+- **Authorization:** `[JwtAuthorize("Seller")]`
 - **Dữ liệu gửi đi:** Không có
 - **Dữ liệu nhận về:**
 ```json
@@ -95,7 +95,7 @@ curl -X POST http://localhost:5000/api/members/register \
 
 ### Tải lên Artwork:
 ```bash
-curl -X POST http://localhost:5000/api/sellers/artworks \
+curl -X POST http://localhost:5000/api/seller/artworks \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -110,13 +110,13 @@ curl -X POST http://localhost:5000/api/sellers/artworks \
 
 ### Xem các Artwork của tôi:
 ```bash
-curl -X GET http://localhost:5000/api/sellers/artworks \
+curl -X GET http://localhost:5000/api/seller/artworks \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 ### Xem lịch sử bán hàng:
 ```bash
-curl -X GET http://localhost:5000/api/sellers/sales-history \
+curl -X GET http://localhost:5000/api/seller/sales-history \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
