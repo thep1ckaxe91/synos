@@ -20,11 +20,7 @@ namespace Synos.Api.Models
         [Column("total", TypeName = "decimal(12,2)")]
         public decimal Total { get; set; }
 
-        [Column("commission_rate", TypeName = "decimal(5,2)")]
-        public decimal CommissionRate { get; set; }
 
-        [Column("commission_amount", TypeName = "decimal(12,2)")]
-        public decimal CommissionAmount { get; set; }
 
         [Column("seller_payout_amount", TypeName = "decimal(12,2)")]
         public decimal SellerPayoutAmount { get; set; }

@@ -29,7 +29,7 @@ builder.Services.AddScoped<IExhibitionRepository, ExhibitionRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IAuctionRepository, AuctionRepository>();
 // TODO: Fix CommissionRepository - model mismatch
-// builder.Services.AddScoped<ICommissionRepository, CommissionRepository>();
+builder.Services.AddScoped<ICommissionRepository, CommissionRepository>();
 
 // Register services
 builder.Services.AddScoped<IMemberService, MemberService>();

@@ -155,37 +155,7 @@ namespace Synos.Api.Repositories
             if (status == OrderStatus.Paid)
             {
                 order.PaymentTime = TimeUtils.GetUpdateTimestamp();
-
-                foreach (var item in order.OrderItems)
-                {
-                    // Assuming one commission per artwork, get the most recent one.
-                    var commission = item.Artwork.Commissions
-                        .OrderByDescending(c => c.AppliedAt)
-                        .FirstOrDefault();
-
-                    if (commission != null)
-                    {
-                        item.CommissionRate = commission.Value; // Snapshot the rate
-
-                        if (commission.CommissionType == CommissionType.Percentage)
-                        {
-                            item.CommissionAmount = item.Total * (commission.Value / 100);
-                        }
-                        else // Fixed amount
-                        {
-                            item.CommissionAmount = commission.Value;
-                        }
-
-                        item.SellerPayoutAmount = item.Total - item.CommissionAmount;
-                    }
-                    else
-                    {
-                        // If no commission rule is found, assume 0 commission
-                        item.CommissionRate = 0;
-                        item.CommissionAmount = 0;
-                        item.SellerPayoutAmount = item.Total;
-                    }
-                }
+                
             }
 
             await _context.SaveChangesAsync();
@@ -258,9 +228,9 @@ namespace Synos.Api.Repositories
         {
             return await _context.Orders
                 .Where(o => o.Status == OrderStatus.Paid && 
-                           o.PaymentTime >= startDate && 
-                           o.PaymentTime <= endDate &&
-                           o.DeletedAt == null)
+                            o.PaymentTime >= startDate && 
+                            o.PaymentTime <= endDate &&
+                            o.DeletedAt == null)
                 .SumAsync(o => o.TotalAmount);
         }
 

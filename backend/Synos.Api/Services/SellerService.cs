@@ -11,17 +11,20 @@ namespace Synos.Api.Services
         private readonly IOrderRepository _orderRepository;
         private readonly IMemberRepository _memberRepository;
         private readonly ICategoryRepository _categoryRepository;
+        private readonly ICommissionRepository _commissionRepository;
 
         public SellerService(
             IArtworkRepository artworkRepository,
             IOrderRepository orderRepository,
             IMemberRepository memberRepository,
-            ICategoryRepository categoryRepository)
+            ICategoryRepository categoryRepository,
+            ICommissionRepository commissionRepository)
         {
             _artworkRepository = artworkRepository;
             _orderRepository = orderRepository;
             _memberRepository = memberRepository;
             _categoryRepository = categoryRepository;
+            _commissionRepository = commissionRepository;
         }
 
         public async Task<SellerArtworkDto?> CreateArtworkAsync(long sellerId, CreateArtworkDto artworkDto)
@@ -103,6 +106,25 @@ namespace Synos.Api.Services
                     // Ensure the artwork in the order item belongs to the seller
                     if (item.Artwork != null && item.Artwork.SellerId == sellerId)
                     {
+                        var commissionAmount = 0m;
+                        var payoutAmount = item.Total;
+
+                        var commissions = await _commissionRepository.GetCommissionsByArtworkIdAsync((int)item.Artwork.Id);
+                        var commission = commissions.FirstOrDefault(); // Assuming the first commission is the one to use
+
+                        if (commission != null)
+                        {
+                            if (commission.CommissionType == CommissionType.Percentage)
+                            {
+                                commissionAmount = item.Total * (commission.Value / 100);
+                            }
+                            else // Fixed
+                            {
+                                commissionAmount = commission.Value;
+                            }
+                            payoutAmount = item.Total - commissionAmount;
+                        }
+
                         salesHistory.Add(new SalesHistoryDto
                         {
                             OrderId = order.Id,
@@ -110,8 +132,8 @@ namespace Synos.Api.Services
                             PrimaryImage = item.Artwork.ArtworkImages?.FirstOrDefault(i => i.IsPrimary)?.FilePath,
                             SoldAt = order.PaymentTime,
                             SalePrice = item.Total,
-                            CommissionAmount = item.CommissionAmount,
-                            PayoutAmount = item.SellerPayoutAmount,
+                            CommissionAmount = commissionAmount,
+                            PayoutAmount = payoutAmount,
                             BuyerName = order.User?.FullName ?? "N/A"
                         });
                     }
