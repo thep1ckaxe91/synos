@@ -7,6 +7,7 @@ namespace Synos.Api.Repositories
         // Basic Order Operations
         Task<Order?> GetOrderByIdAsync(long id);
         Task<IEnumerable<Order>> GetOrdersByMemberIdAsync(long memberId);
+        Task<IEnumerable<Order>> GetOrdersBySellerIdAsync(long sellerId);
         Task<Order> CreateOrderAsync(Order order);
         Task<Order?> UpdateOrderAsync(long id, Order order);
         Task<bool> DeleteOrderAsync(long id);

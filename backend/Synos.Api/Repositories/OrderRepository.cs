@@ -31,6 +31,9 @@ namespace Synos.Api.Repositories
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Artwork)
                         .ThenInclude(a => a.ArtworkImages)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Artwork)
+                        .ThenInclude(a => a.Commissions)
                 .FirstOrDefaultAsync(o => o.Id == id && o.DeletedAt == null);
         }
 
@@ -41,6 +44,18 @@ namespace Synos.Api.Repositories
                     .ThenInclude(oi => oi.Artwork)
                         .ThenInclude(a => a.ArtworkImages)
                 .Where(o => o.UserId == userId && o.DeletedAt == null)
+                .OrderByDescending(o => o.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Order>> GetOrdersBySellerIdAsync(long sellerId)
+        {
+            return await _context.Orders
+                .Include(o => o.User) // This is the buyer
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Artwork)
+                        .ThenInclude(a => a.ArtworkImages)
+                .Where(o => o.OrderItems.Any(oi => oi.Artwork.SellerId == sellerId) && o.DeletedAt == null)
                 .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
         }
@@ -140,6 +155,7 @@ namespace Synos.Api.Repositories
             if (status == OrderStatus.Paid)
             {
                 order.PaymentTime = TimeUtils.GetUpdateTimestamp();
+                
             }
 
             await _context.SaveChangesAsync();
@@ -212,9 +228,9 @@ namespace Synos.Api.Repositories
         {
             return await _context.Orders
                 .Where(o => o.Status == OrderStatus.Paid && 
-                           o.PaymentTime >= startDate && 
-                           o.PaymentTime <= endDate &&
-                           o.DeletedAt == null)
+                            o.PaymentTime >= startDate && 
+                            o.PaymentTime <= endDate &&
+                            o.DeletedAt == null)
                 .SumAsync(o => o.TotalAmount);
         }
 
