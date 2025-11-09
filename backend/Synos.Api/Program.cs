@@ -35,6 +35,7 @@ builder.Services.AddScoped<ICommissionRepository, CommissionRepository>();
 builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ISellerService, SellerService>();
+builder.Services.AddScoped<IBuyerService, BuyerService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IVnPayService, VnPayService>();
 
@@ -69,12 +70,12 @@ builder.Services.AddAuthorization();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: "AllowFrontend",
-                      policy  =>
-                      {
-                          policy.WithOrigins("*")
+                    policy  =>
+                    {
+                        policy.WithOrigins("*")
                                 .AllowAnyHeader()
                                 .AllowAnyMethod();
-                      });
+                    });
 });
 builder.Services.AddHealthChecks();
 
