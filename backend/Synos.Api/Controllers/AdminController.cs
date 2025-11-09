@@ -3,6 +3,7 @@ using Synos.Api.Services;
 using Synos.Api.DTOs;
 using Synos.Api.Models;
 using Synos.Api.Attributes;
+using Synos.Api.Extensions;
 
 namespace Synos.Api.Controllers
 {
@@ -56,8 +57,11 @@ namespace Synos.Api.Controllers
         {
             try
             {
-                var adminId = GetCurrentAdminId();
-                var profile = await _adminService.GetAdminProfileAsync(adminId);
+                var adminId = HttpContext.GetCurrentAdminId();
+                if (adminId == null)
+                    return Unauthorized(new { Message = "Invalid admin token" });
+                
+                var profile = await _adminService.GetAdminProfileAsync(adminId.Value);
                 
                 if (profile == null)
                 {
@@ -82,8 +86,11 @@ namespace Synos.Api.Controllers
         {
             try
             {
-                var adminId = GetCurrentAdminId();
-                var updatedProfile = await _adminService.UpdateAdminProfileAsync(adminId, updateDto);
+                var adminId = HttpContext.GetCurrentAdminId();
+                if (adminId == null)
+                    return Unauthorized(new { Message = "Invalid admin token" });
+                
+                var updatedProfile = await _adminService.UpdateAdminProfileAsync(adminId.Value, updateDto);
                 
                 if (updatedProfile == null)
                 {
@@ -156,8 +163,11 @@ namespace Synos.Api.Controllers
         {
             try
             {
-                var adminId = GetCurrentAdminId();
-                var result = await _adminService.ApproveMemberAsync(adminId, memberId);
+                var adminId = HttpContext.GetCurrentAdminId();
+                if (adminId == null)
+                    return Unauthorized(new { Message = "Invalid admin token" });
+                
+                var result = await _adminService.ApproveMemberAsync(adminId.Value, memberId);
                 
                 if (!result)
                 {
@@ -182,8 +192,11 @@ namespace Synos.Api.Controllers
         {
             try
             {
-                var adminId = GetCurrentAdminId();
-                var result = await _adminService.RejectMemberAsync(adminId, memberId);
+                var adminId = HttpContext.GetCurrentAdminId();
+                if (adminId == null)
+                    return Unauthorized(new { Message = "Invalid admin token" });
+                
+                var result = await _adminService.RejectMemberAsync(adminId.Value, memberId);
                 
                 if (!result)
                 {
@@ -256,8 +269,11 @@ namespace Synos.Api.Controllers
         {
             try
             {
-                var adminId = GetCurrentAdminId();
-                var result = await _adminService.UpdateArtworkStatusAsync(adminId, artworkId, statusDto.Status);
+                var adminId = HttpContext.GetCurrentAdminId();
+                if (adminId == null)
+                    return Unauthorized(new { Message = "Invalid admin token" });
+                
+                var result = await _adminService.UpdateArtworkStatusAsync(adminId.Value, artworkId, statusDto.Status);
                 
                 if (!result)
                 {
@@ -282,8 +298,11 @@ namespace Synos.Api.Controllers
         {
             try
             {
-                var adminId = GetCurrentAdminId();
-                var result = await _adminService.DeleteArtworkAsync(adminId, artworkId);
+                var adminId = HttpContext.GetCurrentAdminId();
+                if (adminId == null)
+                    return Unauthorized(new { Message = "Invalid admin token" });
+                
+                var result = await _adminService.DeleteArtworkAsync(adminId.Value, artworkId);
                 
                 if (!result)
                 {
@@ -765,15 +784,5 @@ namespace Synos.Api.Controllers
         // ===========================================
         // HELPER METHODS
         // ===========================================
-
-        private long GetCurrentAdminId()
-        {
-            var userIdClaim = HttpContext.User.FindFirst("Id");
-            if (userIdClaim == null || !long.TryParse(userIdClaim.Value, out var adminId))
-            {
-                throw new UnauthorizedAccessException("Invalid admin token");
-            }
-            return adminId;
-        }
     }
 }

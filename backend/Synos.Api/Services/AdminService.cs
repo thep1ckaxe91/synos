@@ -301,9 +301,20 @@ namespace Synos.Api.Services
         {
             try
             {
-                // TODO: Implement when IArtworkRepository is created
-                await Task.CompletedTask;
-                return false;
+                // Get the artwork first to verify it exists
+                var artwork = await _artworkRepository.GetArtworkByIdAsync(artworkId);
+                if (artwork == null)
+                {
+                    return false;
+                }
+
+                // Update the status and timestamp
+                artwork.Status = status;
+                artwork.UpdatedAt = TimeUtils.GetCurrentTime();
+
+                // Save the changes
+                var updatedArtwork = await _artworkRepository.UpdateArtworkAsync(artworkId, artwork);
+                return updatedArtwork != null;
             }
             catch (Exception)
             {
@@ -315,9 +326,9 @@ namespace Synos.Api.Services
         {
             try
             {
-                // TODO: Implement when IArtworkRepository is created
-                await Task.CompletedTask;
-                return false;
+                // Use the repository's delete method (soft delete)
+                var result = await _artworkRepository.DeleteArtworkAsync(artworkId);
+                return result;
             }
             catch (Exception)
             {

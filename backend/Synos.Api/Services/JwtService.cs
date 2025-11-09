@@ -31,10 +31,10 @@ namespace Synos.Api.Services
         public JwtService(IConfiguration configuration)
         {
             _configuration = configuration;
-            _secretKey = _configuration["Jwt:SecretKey"] ?? "SynosSecretKeyForJWT2025VietnamUTC+7DefaultKey123456789";
-            _issuer = _configuration["Jwt:Issuer"] ?? "SynosApi";
-            _audience = _configuration["Jwt:Audience"] ?? "SynosClients";
-            _expirationMinutes = int.Parse(_configuration["Jwt:ExpirationMinutes"] ?? "1440"); // 24 hours default
+            _secretKey = _configuration["JwtSettings:SecretKey"] ?? "SynosSecretKeyForJWT2025VietnamUTC+7DefaultKey123456789";
+            _issuer = _configuration["JwtSettings:Issuer"] ?? "SynosApi";
+            _audience = _configuration["JwtSettings:Audience"] ?? "SynosClients";
+            _expirationMinutes = int.Parse(_configuration["JwtSettings:ExpirationMinutes"] ?? "1440"); // 24 hours default
         }
 
         public string GenerateToken(Member member)

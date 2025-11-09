@@ -35,11 +35,11 @@ INSERT INTO categories (id, name, slug, description, created_at) VALUES
 
 -- Insert Members (Sellers and Buyers)
 INSERT INTO members (id, email, password_hash, full_name, role, phone, bio, profile_image, created_at, updated_at, is_active) VALUES
-(1, 'seller@synos.com', 'hashed_password_seller123', 'Vincent Artist', 'Seller', '+1234567890', 'Professional painter with 15 years of experience in contemporary art. Specializes in abstract expressionism and landscape paintings.', 'profiles/vincent-artist.jpg', NOW(), NOW(), TRUE),
-(2, 'buyer@synos.com', 'hashed_password_buyer123', 'Art Collector', 'Buyer', '+1987654321', NULL, NULL, NOW(), NOW(), TRUE),
-(3, 'painter@synos.com', 'hashed_password_painter123', 'Pablo Modern', 'Seller', '+1122334455', 'Modern painter inspired by cubism and surrealism. Creates vibrant works that challenge traditional perspectives.', 'profiles/pablo-modern.jpg', NOW(), NOW(), TRUE),
-(4, 'collector@synos.com', 'hashed_password_collector123', 'Gallery Owner', 'Buyer', '+1555666777', NULL, NULL, NOW(), NOW(), TRUE),
-(5, 'sculptor@synos.com', 'hashed_password_sculptor123', 'Auguste Stone', 'Seller', '+1999888777', 'Contemporary sculptor working with bronze, marble, and mixed media. Known for large-scale public installations.', 'profiles/auguste-stone.jpg', NOW(), NOW(), TRUE);
+(1, 'seller@synos.com', 'rW/e0TSeo9G72zmBnn6PxM301X4mc/gEBNWBK/E1Z6A=', 'Vincent Artist', 'Seller', '+1234567890', 'Professional painter with 15 years of experience in contemporary art. Specializes in abstract expressionism and landscape paintings.', 'profiles/vincent-artist.jpg', NOW(), NOW(), TRUE),
+(2, 'buyer@synos.com', 'aCjKtrkbZY9Y0id6FKSHqEWzxheyF1DsuNFfwDJMykA=', 'Art Collector', 'Buyer', '+1987654321', NULL, NULL, NOW(), NOW(), TRUE),
+(3, 'painter@synos.com', 'JNcMuPa5ocEP4D2x4HXyG3SX847PmwXYlenrmsLRTs4=', 'Pablo Modern', 'Seller', '+1122334455', 'Modern painter inspired by cubism and surrealism. Creates vibrant works that challenge traditional perspectives.', 'profiles/pablo-modern.jpg', NOW(), NOW(), TRUE),
+(4, 'collector@synos.com', '3USK4RgoW7sx+HYOmosZVEue3Go7r+IRA5rkkqyAej4=', 'Gallery Owner', 'Buyer', '+1555666777', NULL, NULL, NOW(), NOW(), TRUE),
+(5, 'sculptor@synos.com', 'uPNCg9BNF9bVv3si9eIT0bWd3rrU8uEb46mSshhOZV4=', 'Auguste Stone', 'Seller', '+1999888777', 'Contemporary sculptor working with bronze, marble, and mixed media. Known for large-scale public installations.', 'profiles/auguste-stone.jpg', NOW(), NOW(), TRUE);
 
 -- Insert Artworks
 INSERT INTO artworks (id, seller_id, title, description, category_id, creation_year, dimensions, `condition`, is_for, fixed_price, currency, status, created_at, updated_at) VALUES
@@ -107,7 +107,7 @@ INSERT INTO commissions (id, artwork_id, commission_type, value, applied_at) VAL
 
 -- Insert Admin
 INSERT INTO admin (id, email, password_hash, full_name, phone, created_at, updated_at, is_active) VALUES
-(1, 'admin@synos.com', 'hashed_password_admin123', 'System Administrator', '+1000000000', NOW(), NOW(), TRUE);
+(1, 'admin@synos.com', 'L+yBlDsdu+tOyWx7++adN7HYhny5FVntuaYIHvj6TfU=', 'System Administrator', '+1000000000', NOW(), NOW(), TRUE);
 
 EOF
 
