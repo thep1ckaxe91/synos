@@ -32,6 +32,20 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=mysql;Database=synos_db;User Id=synos_user;Password=synos_password;Port=3306;
 
+  # This service is for running one-off setup tasks, like creating the initial migration.
+  # Run it with: docker-compose run --rm backend-setup
+  backend-setup:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=mysql;Database=synos_db;User Id=synos_user;Password=synos_password;Port=3306;
+    entrypoint: /app/scripts/create-migration.sh
+
   frontend:
     build:
       context: ./frontend

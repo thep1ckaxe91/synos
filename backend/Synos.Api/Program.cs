@@ -41,7 +41,7 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IVnPayService, VnPayService>();
 
 // Register auction services
-builder.Services.AddSingleton<IAuctionFileManagerService, AuctionFileManagerService>();
+builder.Services.AddScoped<IAuctionFileManagerService, AuctionFileManagerService>();
 builder.Services.AddHostedService<AuctionProcessorService>();
 
 
