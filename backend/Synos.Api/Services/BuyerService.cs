@@ -1,6 +1,8 @@
 using Synos.Api.DTOs;
 using Synos.Api.Models;
+using Synos.Api.Models.AuctionDataModels;
 using Synos.Api.Repositories;
+using Synos.Api.Services.AuctionServices;
 using Synos.Api.Utils;
 
 namespace Synos.Api.Services
@@ -12,19 +14,22 @@ namespace Synos.Api.Services
         private readonly IMemberRepository _memberRepository;
         private readonly IVnPayService _vnPayService;
         private readonly ILogger<BuyerService> _logger;
+        private readonly IAuctionFileManagerService _auctionFileManager;
 
         public BuyerService(
             IOrderRepository orderRepository,
             IArtworkRepository artworkRepository,
             IMemberRepository memberRepository,
             IVnPayService vnPayService,
-            ILogger<BuyerService> logger)
+            ILogger<BuyerService> logger,
+            IAuctionFileManagerService auctionFileManager)
         {
             _orderRepository = orderRepository;
             _artworkRepository = artworkRepository;
             _memberRepository = memberRepository;
             _vnPayService = vnPayService;
             _logger = logger;
+            _auctionFileManager = auctionFileManager;
         }
 
         public async Task<IEnumerable<Order>> GetPurchaseHistoryAsync(long buyerId)
@@ -70,9 +75,9 @@ namespace Synos.Api.Services
             return await _orderRepository.GetOrderByIdAsync(createdOrder.Id);
         }
 
-        public async Task<string?> InitiatePaymentAsync(long buyerId, long orderId, HttpContext httpContext)
+        public string? InitiatePaymentAsync(long buyerId, long orderId, HttpContext httpContext) // Removed async
         {
-            var order = await _orderRepository.GetOrderByIdAsync(orderId);
+            var order = _orderRepository.GetOrderByIdAsync(orderId).Result; // Synchronous call for demonstration
             if (order == null || order.UserId != buyerId)
             {
                 // Returning null for not found or forbidden
@@ -147,7 +152,7 @@ namespace Synos.Api.Services
                 {
                      // This case should ideally not happen if ProcessIpn is correct, but as a safeguard.
                     _logger.LogWarning("VNPay IPN signature validation failed for order {OrderId}.", orderId);
-                     return new VnPayIpnResponseDto { RspCode = "97", Message = "Invalid Signature" };
+                    return new VnPayIpnResponseDto { RspCode = "97", Message = "Invalid Signature" };
                 }
 
                 var order = await _orderRepository.GetOrderByIdAsync(orderId);
@@ -172,8 +177,8 @@ namespace Synos.Api.Services
                     // If already paid, it might be a duplicate IPN. We can just acknowledge it as successful.
                     if (order.Status == OrderStatus.Paid)
                     {
-                         _logger.LogInformation("Duplicate IPN for already paid order {OrderId}. Acknowledging success.", orderId);
-                         return new VnPayIpnResponseDto { RspCode = "00", Message = "Confirm Success" };
+                        _logger.LogInformation("Duplicate IPN for already paid order {OrderId}. Acknowledging success.", orderId);
+                        return new VnPayIpnResponseDto { RspCode = "00", Message = "Confirm Success" };
                     }
                     // If it's any other status (e.g., Cancelled), it's an invalid request.
                     _logger.LogWarning("IPN received for order {OrderId} with invalid status: {OrderStatus}", orderId, order.Status);
@@ -201,6 +206,49 @@ namespace Synos.Api.Services
                 // Return a generic error to VNPAY so it knows something went wrong on our end.
                 return new VnPayIpnResponseDto { RspCode = "99", Message = "Unknown error" };
             }
+        }
+
+        // Auction Methods
+        public async Task<IEnumerable<AuctionData>> GetActiveAuctionsAsync()
+        {
+            return await _auctionFileManager.GetAllActiveAuctionsAsync();
+        }
+
+        public async Task<AuctionData?> GetAuctionDetailsAsync(long auctionId) // Changed parameter to long
+        {
+            return await _auctionFileManager.GetAuctionDetailsAsync(auctionId);
+        }
+
+        public async Task<bool> PlaceBidAsync(long auctionId, long memberId, decimal amount) // Changed parameters to long
+        {
+            var auction = await _auctionFileManager.GetAuctionDetailsAsync(auctionId);
+            if (auction == null || auction.EndTime <= DateTime.UtcNow)
+            {
+                return false; // Auction not found or has ended
+            }
+
+            var highestBid = auction.Bids.Any() ? auction.Bids.Max(b => b.Amount) : auction.StartingPrice;
+            if (amount <= highestBid)
+            {
+                return false; // Bid must be higher than the current highest bid
+            }
+
+            var member = await _memberRepository.GetMemberByIdAsync(memberId);
+            if (member == null)
+            {
+                return false; // Member not found
+            }
+
+            var newBid = new BidData
+            {
+                MemberId = memberId,
+                MemberName = member.FullName, // Changed from Name to FullName
+                Amount = amount,
+                Timestamp = DateTime.UtcNow
+            };
+
+            await _auctionFileManager.AddBidAsync(auctionId, newBid);
+            return true;
         }
     }
 }

@@ -56,7 +56,7 @@ namespace Synos.Api.Controllers
         }
 
         [HttpPost("orders/{orderId}/pay")]
-        public async Task<IActionResult> InitiatePayment(long orderId)
+        public IActionResult InitiatePayment(long orderId) // Changed to synchronous
         {
             var memberId = HttpContext.GetCurrentMemberId();
             if (memberId == null)
@@ -64,7 +64,7 @@ namespace Synos.Api.Controllers
                 return Unauthorized(new { message = "Invalid token." });
             }
 
-            var paymentUrl = await _buyerService.InitiatePaymentAsync(memberId.Value, orderId, HttpContext);
+            var paymentUrl = _buyerService.InitiatePaymentAsync(memberId.Value, orderId, HttpContext);
 
             if (paymentUrl == null)
             {
@@ -95,6 +95,44 @@ namespace Synos.Api.Controllers
         {
             var response = await _buyerService.ProcessVnPayIpnAsync(Request.Query);
             return Ok(response);
+        }
+
+        // Auction Endpoints
+        [HttpGet("auctions")]
+        public async Task<IActionResult> GetActiveAuctions()
+        {
+            var auctions = await _buyerService.GetActiveAuctionsAsync();
+            return Ok(auctions);
+        }
+
+        [HttpGet("auctions/{id}")]
+        public async Task<IActionResult> GetAuctionDetails(long id) // Changed from Guid to long
+        {
+            var auction = await _buyerService.GetAuctionDetailsAsync(id);
+            if (auction == null)
+            {
+                return NotFound();
+            }
+            return Ok(auction);
+        }
+
+        [HttpPost("auctions/{id}/bids")]
+        public async Task<IActionResult> PlaceBid(long id, [FromBody] PlaceBidDto bidDto) // Changed from Guid to long
+        {
+            var memberId = HttpContext.GetCurrentMemberId();
+            if (memberId == null)
+            {
+                return Unauthorized(new { message = "Invalid token." });
+            }
+
+            var success = await _buyerService.PlaceBidAsync(id, memberId.Value, bidDto.Amount);
+
+            if (!success)
+            {
+                return BadRequest(new { message = "Could not place bid. The auction may have ended or your bid is not high enough." });
+            }
+
+            return Ok(new { message = "Bid placed successfully." });
         }
     }
 }

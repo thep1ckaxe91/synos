@@ -113,6 +113,23 @@ namespace Synos.Api.Controllers
             return Ok(salesHistory);
         }
 
+        [HttpPost("auctions")]
+        public async Task<IActionResult> CreateAuction([FromBody] CreateAuctionDto createAuctionDto)
+        {
+            var sellerId = GetCurrentSellerId();
+            if (sellerId == null)
+            {
+                return Unauthorized(new { message = "Invalid token or not a seller." });
+            }
+
+            var auction = await _sellerService.CreateAuctionAsync(sellerId.Value, createAuctionDto);
+            if (auction == null)
+            {
+                return BadRequest(new { message = "Failed to create auction. Check artwork availability, ownership, or auction times." });
+            }
+            return CreatedAtAction(nameof(GetArtworks), new { }, auction); // Reusing GetArtworks for CreatedAtAction, ideally should be GetAuctionDetails
+        }
+
         private long? GetCurrentSellerId()
         {
             // A "Seller" is a "Member" with the role "Seller".

@@ -1,29 +1,29 @@
-# 🛍️ Synos Buyer Features - API Examples
+# 🛍️ Tính năng của Người mua (Buyer) - Ví dụ API
 
-This document provides examples for the API endpoints available to users with the "Buyer" role.
+Tài liệu này cung cấp các ví dụ cho các điểm cuối API dành cho người dùng có vai trò "Buyer".
 
-## 📋 Buyer Features
+## 📋 Tính năng của Người mua
 
-A user with the "Buyer" role inherits all the basic features of a "Member" and has the following additional capabilities:
+Người dùng có vai trò "Buyer" kế thừa tất cả các tính năng cơ bản của "Member" và có thêm các khả năng sau:
 
-### ✅ 1. Place an Order
-- **Description:** Creates a new order for a specific artwork that is for sale at a fixed price.
-- **Endpoint:** `POST /api/buyer/orders`
-- **Authorization:** `[JwtAuthorize]` (Requires a valid token for any role, but the service logic will ensure the user is not a Seller).
-- **Request Body:**
+### ✅ 1. Đặt hàng (Place an Order)
+- **Mô tả:** Tạo một đơn hàng mới cho một tác phẩm nghệ thuật cụ thể đang được bán với giá cố định.
+- **Đường dẫn:** `POST /api/buyer/orders`
+- **Ủy quyền:** `[JwtAuthorize]` (Yêu cầu token hợp lệ cho bất kỳ vai trò nào, nhưng logic dịch vụ sẽ đảm bảo người dùng không phải là Seller).
+- **Dữ liệu gửi đi:**
 ```json
 {
   "artworkId": "long"
 }
 ```
-- **Success Response (200 OK):**
+- **Phản hồi thành công (200 OK):**
 ```json
 {
   "id": "long",
   "userId": "long",
   "orderNumber": "string",
   "totalAmount": "decimal",
-  "status": "Pending", // Orders are created with Pending status
+  "status": "Pending", // Đơn hàng được tạo với trạng thái Chờ xử lý
   "createdAt": "datetime",
   "updatedAt": "datetime",
   "orderItems": [
@@ -36,20 +36,20 @@ A user with the "Buyer" role inherits all the basic features of a "Member" and h
   ]
 }
 ```
-- **Error Response (400 Bad Request):**
-  - If the artwork is not available, not for fixed sale, or the user is a Seller.
+- **Phản hồi lỗi (400 Bad Request):**
+  - Nếu tác phẩm không có sẵn, không phải để bán giá cố định, hoặc người dùng là Seller.
 ```json
 {
   "message": "Could not place order. The artwork may not be available or your account is not authorized."
 }
 ```
 
-### ✅ 2. Get Purchase History
-- **Description:** Retrieves a list of all orders placed by the currently logged-in buyer.
-- **Endpoint:** `GET /api/buyer/orders`
-- **Authorization:** `[JwtAuthorize]`
-- **Request Body:** None
-- **Success Response (200 OK):**
+### ✅ 2. Xem lịch sử mua hàng (Get Purchase History)
+- **Mô tả:** Lấy danh sách tất cả các đơn hàng đã đặt bởi người mua đang đăng nhập.
+- **Đường dẫn:** `GET /api/buyer/orders`
+- **Ủy quyền:** `[JwtAuthorize]`
+- **Dữ liệu gửi đi:** Không có
+- **Phản hồi thành công (200 OK):**
 ```json
 [
   {
@@ -72,44 +72,122 @@ A user with the "Buyer" role inherits all the basic features of a "Member" and h
 ]
 ```
 
-### ✅ 3. Initiate Payment for an Order
-- **Description:** Generates a VNPAY payment URL for a specific `Pending` order.
-- **Endpoint:** `POST /api/buyer/orders/{orderId}/pay`
-- **Authorization:** `[JwtAuthorize]`
-- **Request Body:** None
-- **Success Response (200 OK):**
+### ✅ 3. Bắt đầu thanh toán cho đơn hàng (Initiate Payment for an Order)
+- **Mô tả:** Tạo URL thanh toán VNPAY cho một đơn hàng cụ thể có trạng thái `Pending`. Áp dụng cho cả đơn hàng giá cố định và đơn hàng được tạo tự động sau khi thắng đấu giá.
+- **Đường dẫn:** `POST /api/buyer/orders/{orderId}/pay`
+- **Ủy quyền:** `[JwtAuthorize]`
+- **Dữ liệu gửi đi:** Không có
+- **Phản hồi thành công (200 OK):**
 ```json
 {
-  "paymentUrl": "string" // The URL to redirect the user to for payment
+  "paymentUrl": "string" // URL để chuyển hướng người dùng đến để thanh toán
 }
 ```
-- **Error Response (404 Not Found):**
-  - If the order does not exist, does not belong to the user, or is not in `Pending` status.
+- **Phản hồi lỗi (404 Not Found):**
+  - Nếu đơn hàng không tồn tại, không thuộc về người dùng, hoặc không ở trạng thái `Pending`.
 ```json
 {
   "message": "Order not found, you do not have permission, or the order cannot be paid for."
 }
 ```
 
-## 🧪 Testing with curl
+## 🏆 Tính năng Đấu giá (Auction Features)
 
-### Register a new Buyer:
-First, you need an account with the "Buyer" role.
+### ✅ 1. Xem các phiên đấu giá đang hoạt động (Get Active Auctions)
+- **Mô tả:** Lấy danh sách tất cả các phiên đấu giá đang hoạt động.
+- **Đường dẫn:** `GET /api/buyer/auctions`
+- **Ủy quyền:** `[JwtAuthorize]`
+- **Dữ liệu gửi đi:** Không có
+- **Phản hồi thành công (200 OK):**
+```json
+[
+  {
+    "auctionId": "long",
+    "artworkId": "long",
+    "artworkName": "string",
+    "startTime": "datetime",
+    "endTime": "datetime",
+    "startingPrice": "decimal",
+    "bids": [
+      {
+        "memberId": "long",
+        "memberName": "string",
+        "amount": "decimal",
+        "timestamp": "datetime"
+      }
+    ]
+  }
+]
+```
+
+### ✅ 2. Xem chi tiết phiên đấu giá (Get Auction Details)
+- **Mô tả:** Lấy chi tiết của một phiên đấu giá đang hoạt động, bao gồm lịch sử đặt giá.
+- **Đường dẫn:** `GET /api/buyer/auctions/{id}`
+- **Ủy quyền:** `[JwtAuthorize]`
+- **Dữ liệu gửi đi:** Không có
+- **Phản hồi thành công (200 OK):**
+```json
+{
+  "auctionId": "long",
+  "artworkId": "long",
+  "artworkName": "string",
+  "startTime": "datetime",
+  "endTime": "datetime",
+  "startingPrice": "decimal",
+  "bids": [
+    {
+      "memberId": "long",
+      "memberName": "string",
+      "amount": "decimal",
+      "timestamp": "datetime"
+    }
+  ]
+}
+```
+
+### ✅ 3. Đặt giá (Place a Bid)
+- **Mô tả:** Đặt giá cho một phiên đấu giá đang hoạt động. Số tiền đặt giá phải cao hơn giá thầu cao nhất hiện tại.
+- **Đường dẫn:** `POST /api/buyer/auctions/{id}/bids`
+- **Ủy quyền:** `[JwtAuthorize]`
+- **Dữ liệu gửi đi:**
+```json
+{
+  "amount": "decimal"
+}
+```
+- **Phản hồi thành công (200 OK):**
+```json
+{
+  "message": "Bid placed successfully."
+}
+```
+- **Phản hồi lỗi (400 Bad Request):**
+  - Nếu phiên đấu giá đã kết thúc hoặc số tiền đặt giá không đủ cao.
+```json
+{
+  "message": "Could not place bid. The auction may have ended or your bid is not high enough."
+}
+```
+
+## 🧪 Thử nghiệm với curl
+
+### Đăng ký một Người mua mới:
+Đầu tiên, bạn cần một tài khoản có vai trò "Buyer".
 ```bash
 curl -X POST http://localhost:5000/api/members/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "buyer@synos.com",
     "password": "buyer123",
-    "fullName": "Buyer Name",
+    "fullName": "Ten Nguoi Mua",
     "phone": "+0987654321",
     "role": "Buyer"
   }'
 ```
-After registering, log in with these credentials to get a JWT token.
+Sau khi đăng ký, đăng nhập bằng thông tin này để nhận token JWT.
 
-### Place an Order:
-(Assuming an artwork with `id=1` exists and is available for sale)
+### Đặt hàng:
+(Giả sử một tác phẩm nghệ thuật có `id=1` tồn tại và có sẵn để bán)
 ```bash
 curl -X POST http://localhost:5000/api/buyer/orders \
   -H "Content-Type: application/json" \
@@ -118,23 +196,35 @@ curl -X POST http://localhost:5000/api/buyer/orders \
     "artworkId": 1
   }'
 ```
-**Note:** Take note of the `id` from the response body, as you will need it to initiate payment.
+**Lưu ý:** Ghi lại `id` từ phản hồi, bạn sẽ cần nó để bắt đầu thanh toán.
 
-### Get Purchase History:
+### Xem lịch sử mua hàng:
 ```bash
 curl -X GET http://localhost:5000/api/buyer/orders \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-### Initiate Payment:
-(Using the order `id` from the "Place an Order" step, e.g., `orderId=1`)
+### Bắt đầu thanh toán:
+(Sử dụng `id` đơn hàng từ bước "Đặt hàng", ví dụ: `orderId=1`)
 ```bash
 curl -X POST http://localhost:5000/api/buyer/orders/1/pay \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
-The response will contain a `paymentUrl`. Copy and paste this URL into your browser to proceed with the VNPAY payment process.
+Phản hồi sẽ chứa một `paymentUrl`. Sao chép và dán URL này vào trình duyệt của bạn để tiếp tục quá trình thanh toán VNPAY.
 
-## ⚠️ Important Notes:
-- **VNPay Configuration:** Ensure you have correctly configured your `VnpaySettings` in `appsettings.json` with a valid `TmnCode` and `HashSecret`.
-- **Authorization:** All buyer endpoints require a valid JWT token.
-- **Artwork Availability:** To place an order, an artwork must exist in the database with `Status = Available` and `IsFor = Fixed`.
+### Đặt giá cho một phiên đấu giá:
+(Giả sử một phiên đấu giá có `id=1` đang hoạt động)
+```bash
+curl -X POST http://localhost:5000/api/buyer/auctions/1/bids \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "amount": 550.00
+  }'
+```
+
+## ⚠️ Lưu ý quan trọng:
+- **Cấu hình VNPay:** Đảm bảo bạn đã cấu hình đúng `VnpaySettings` trong `appsettings.json` với `TmnCode` và `HashSecret` hợp lệ.
+- **Ủy quyền:** Tất cả các điểm cuối của người mua đều yêu cầu token JWT hợp lệ.
+- **Tình trạng tác phẩm:** Để đặt hàng, một tác phẩm nghệ thuật phải tồn tại trong cơ sở dữ liệu với `Status = Available` và `IsFor = Fixed`.
+- **Thắng đấu giá:** Nếu bạn thắng một phiên đấu giá, một đơn hàng sẽ được tạo tự động cho bạn. Sau đó, bạn có thể tìm thấy đơn hàng này trong lịch sử mua hàng của mình và sử dụng điểm cuối "Bắt đầu thanh toán" để thanh toán.

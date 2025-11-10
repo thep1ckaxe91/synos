@@ -1,6 +1,8 @@
 using Synos.Api.DTOs;
 using Synos.Api.Models;
+using Synos.Api.Models.AuctionDataModels;
 using Synos.Api.Repositories;
+using Synos.Api.Services.AuctionServices;
 using System.Linq;
 
 namespace Synos.Api.Services
@@ -12,19 +14,25 @@ namespace Synos.Api.Services
         private readonly IMemberRepository _memberRepository;
         private readonly ICategoryRepository _categoryRepository;
         private readonly ICommissionRepository _commissionRepository;
+        private readonly IAuctionRepository _auctionRepository;
+        private readonly IAuctionFileManagerService _auctionFileManager;
 
         public SellerService(
             IArtworkRepository artworkRepository,
             IOrderRepository orderRepository,
             IMemberRepository memberRepository,
             ICategoryRepository categoryRepository,
-            ICommissionRepository commissionRepository)
+            ICommissionRepository commissionRepository,
+            IAuctionRepository auctionRepository,
+            IAuctionFileManagerService auctionFileManager)
         {
             _artworkRepository = artworkRepository;
             _orderRepository = orderRepository;
             _memberRepository = memberRepository;
             _categoryRepository = categoryRepository;
             _commissionRepository = commissionRepository;
+            _auctionRepository = auctionRepository;
+            _auctionFileManager = auctionFileManager;
         }
 
         public async Task<SellerArtworkDto?> CreateArtworkAsync(long sellerId, CreateArtworkDto artworkDto)
@@ -69,7 +77,7 @@ namespace Synos.Api.Services
                 Status = createdArtwork.Status.ToString(),
                 PrimaryImage = createdArtwork.ArtworkImages.FirstOrDefault(i => i.IsPrimary)?.FilePath,
                 CreatedAt = createdArtwork.CreatedAt,
-                CategoryName = category.Name
+                CategoryName = createdArtwork.Category?.Name ?? "N/A" // Changed to createdArtwork.Category?.Name
             };
         }
 
@@ -141,6 +149,45 @@ namespace Synos.Api.Services
             }
 
             return salesHistory;
+        }
+
+        public async Task<AuctionData?> CreateAuctionAsync(long sellerId, CreateAuctionDto createAuctionDto)
+        {
+            var seller = await _memberRepository.GetMemberByIdAsync(sellerId);
+            if (seller == null || seller.Role != MemberRole.Seller)
+            {
+                return null; // Only sellers can create auctions
+            }
+
+            var artwork = await _artworkRepository.GetArtworkByIdAsync(createAuctionDto.ArtworkId);
+            if (artwork == null || artwork.SellerId != sellerId || artwork.IsFor != ArtworkFor.Auction || artwork.Status != ArtworkStatus.Available)
+            {
+                return null; // Artwork not found, not owned by seller, not for auction, or not available
+            }
+
+            if (createAuctionDto.StartTime >= createAuctionDto.EndTime || createAuctionDto.StartTime < DateTime.UtcNow)
+            {
+                return null; // Invalid auction times
+            }
+
+            var auction = new Auction
+            {
+                ArtworkId = createAuctionDto.ArtworkId,
+                StartTime = createAuctionDto.StartTime,
+                EndTime = createAuctionDto.EndTime,
+                StartingPrice = createAuctionDto.StartingPrice,
+                Status = AuctionStatus.Scheduled // Initially scheduled
+            };
+
+            var createdAuction = await _auctionRepository.CreateAuctionAsync(auction);
+            if (createdAuction == null)
+            {
+                return null;
+            }
+
+            // Create the JSON file for the active auction
+            var auctionData = await _auctionFileManager.CreateAuctionFileAsync(createdAuction);
+            return auctionData;
         }
     }
 }

@@ -92,6 +92,34 @@ Seller kế thừa tất cả các tính năng của Member và có thêm các t
 ]
 ```
 
+### ✅ 5. Tạo phiên đấu giá (Create an Auction)
+- **Đường dẫn:** `POST /api/seller/auctions`
+- **Authorization:** `[JwtAuthorize("Seller")]`
+- **Dữ liệu gửi đi:**
+```json
+{
+  "artworkId": "long",
+  "startingPrice": "decimal",
+  "startTime": "datetime",
+  "endTime": "datetime"
+}
+```
+- **Dữ liệu nhận về (201 Created):**
+```json
+{
+  "auctionId": "long",
+  "artworkId": "long",
+  "artworkName": "string",
+  "startTime": "datetime",
+  "endTime": "datetime",
+  "startingPrice": "decimal",
+  "bids": []
+}
+```
+- **Lưu ý:**
+  - Chỉ có thể tạo phiên đấu giá cho các artwork có `saleType` là `Auction` và `status` là `Available`.
+  - `startTime` phải ở tương lai và trước `endTime`.
+
 ## 🧪 Testing với curl/Postman
 
 ### Đăng ký Seller mới:
@@ -120,16 +148,32 @@ curl -X POST http://localhost:5000/api/seller/artworks/upload \
 
 ### Tạo Artwork (sử dụng URL từ bước trên):
 ```bash
+# Tạo artwork để bán đấu giá
 curl -X POST http://localhost:5000/api/seller/artworks \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
-    "title": "My First Artwork",
-    "description": "A beautiful piece of art.",
-    "price": 1500.00,
-    "saleType": "FixedPrice",
+    "title": "Artwork for Auction",
+    "description": "This artwork will be auctioned.",
+    "price": 0, # Price is not needed for auction type
+    "saleType": "Auction",
     "categoryId": 1,
-    "imageUrls": ["http://localhost:5000/uploads/artworks/unique-id_image1.jpg", "http://localhost:5000/uploads/artworks/unique-id_image2.png"]
+    "imageUrls": ["http://localhost:5000/uploads/artworks/unique-id_image1.jpg"]
+  }'
+```
+**Lưu ý:** Ghi lại `id` của artwork được tạo (ví dụ: `id=5`). Bạn sẽ cần nó để tạo phiên đấu giá. Artwork này cần được Admin duyệt để có status `Available`.
+
+### Tạo phiên đấu giá:
+(Giả sử artwork có `id=5` đã được duyệt và có status `Available`)
+```bash
+curl -X POST http://localhost:5000/api/seller/auctions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "artworkId": 5,
+    "startingPrice": 500.00,
+    "startTime": "2025-12-01T10:00:00Z",
+    "endTime": "2025-12-10T10:00:00Z"
   }'
 ```
 

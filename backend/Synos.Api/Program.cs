@@ -6,6 +6,7 @@ using Synos.Api.Data;
 using Synos.Api.Middlewares;
 using Synos.Api.Repositories;
 using Synos.Api.Services;
+using Synos.Api.Services.AuctionServices;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,6 +39,11 @@ builder.Services.AddScoped<ISellerService, SellerService>();
 builder.Services.AddScoped<IBuyerService, BuyerService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IVnPayService, VnPayService>();
+
+// Register auction services
+builder.Services.AddSingleton<IAuctionFileManagerService, AuctionFileManagerService>();
+builder.Services.AddHostedService<AuctionProcessorService>();
+
 
 // Configure JWT Authentication
 var jwtSecretKey = builder.Configuration["JwtSettings:SecretKey"] ?? "SynosSecretKeyForJWT2025VietnamUTC+7DefaultKey123456789";
