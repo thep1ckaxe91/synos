@@ -98,8 +98,11 @@ namespace Synos.Api.Services
         public async Task<VnPayReturnDto> ProcessVnPayReturnAsync(IQueryCollection collections)
         {
             var response = _vnPayService.ProcessIpn(collections); // Use the same validation logic for the return URL
-            long.TryParse(collections["vnp_TxnRef"], out var orderId);
-            long.TryParse(collections["vnp_Amount"], out var amountValue);
+            var txnRef = collections["vnp_TxnRef"].FirstOrDefault() ?? string.Empty;
+            var amount = collections["vnp_Amount"].FirstOrDefault() ?? string.Empty;
+
+            long.TryParse(txnRef, out var orderId);
+            long.TryParse(amount, out var amountValue);
 
             var returnDto = new VnPayReturnDto
             {
@@ -127,12 +130,15 @@ namespace Synos.Api.Services
 
             try
             {
-                long.TryParse(collections["vnp_TxnRef"], out var orderId);
-                long.TryParse(collections["vnp_Amount"], out var vnpayAmount); // Amount is in pennies (dong * 100)
+                var txnRef = collections["vnp_TxnRef"].FirstOrDefault() ?? string.Empty;
+                var amount = collections["vnp_Amount"].FirstOrDefault() ?? string.Empty;
+        
+                long.TryParse(txnRef, out var orderId);
+                long.TryParse(amount, out var vnpayAmount); // Amount is in pennies (dong * 100)
 
                 if (orderId <= 0)
                 {
-                    _logger.LogError("Invalid OrderId in IPN: {OrderId}", collections["vnp_TxnRef"].ToString());
+                    _logger.LogError("Invalid OrderId in IPN: {OrderId}", txnRef);
                     return new VnPayIpnResponseDto { RspCode = "01", Message = "Order not found" };
                 }
                 
