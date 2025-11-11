@@ -105,5 +105,14 @@ namespace Synos.Api.Utils
         {
             return $"Vietnam Time (UTC+7) - {VietnamTimeZone.DisplayName}";
         }
+
+        /// <summary>
+        /// Get current UTC time for JWT and API operations that require UTC
+        /// </summary>
+        /// <returns>Current UTC datetime</returns>
+        public static DateTimeOffset GetCurrentUtcTime()
+        {
+            return DateTimeOffset.UtcNow;
+        }
     }
 }

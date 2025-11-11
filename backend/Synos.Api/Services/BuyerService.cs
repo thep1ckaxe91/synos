@@ -1,9 +1,8 @@
 using Synos.Api.DTOs;
 using Synos.Api.Models;
-using Synos.Api.Models.AuctionDataModels;
 using Synos.Api.Repositories;
-using Synos.Api.Services.AuctionServices;
 using Synos.Api.Utils;
+using System.Text.Json;
 
 namespace Synos.Api.Services
 {
@@ -14,7 +13,8 @@ namespace Synos.Api.Services
         private readonly IMemberRepository _memberRepository;
         private readonly IVnPayService _vnPayService;
         private readonly ILogger<BuyerService> _logger;
-        private readonly IAuctionFileManagerService _auctionFileManager;
+        private readonly IAuctionRepository _auctionRepository;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
         public BuyerService(
             IOrderRepository orderRepository,
@@ -22,22 +22,25 @@ namespace Synos.Api.Services
             IMemberRepository memberRepository,
             IVnPayService vnPayService,
             ILogger<BuyerService> logger,
-            IAuctionFileManagerService auctionFileManager)
+            IAuctionRepository auctionRepository,
+            IWebHostEnvironment webHostEnvironment)
         {
             _orderRepository = orderRepository;
             _artworkRepository = artworkRepository;
             _memberRepository = memberRepository;
             _vnPayService = vnPayService;
             _logger = logger;
-            _auctionFileManager = auctionFileManager;
+            _auctionRepository = auctionRepository;
+            _webHostEnvironment = webHostEnvironment;
         }
 
-        public async Task<IEnumerable<Order>> GetPurchaseHistoryAsync(long buyerId)
+        public async Task<IEnumerable<OrderResponseDto>> GetPurchaseHistoryAsync(long buyerId)
         {
-            return await _orderRepository.GetOrdersByMemberIdAsync(buyerId);
+            var orders = await _orderRepository.GetOrdersByMemberIdAsync(buyerId);
+            return orders.Select(MapOrderToDto);
         }
 
-        public async Task<Order?> PlaceOrderAsync(long buyerId, CreateOrderDto createOrderDto)
+        public async Task<OrderResponseDto?> PlaceOrderAsync(long buyerId, CreateOrderDto createOrderDto)
         {
             var member = await _memberRepository.GetMemberByIdAsync(buyerId);
             if (member == null || member.Role == MemberRole.Seller)
@@ -53,14 +56,17 @@ namespace Synos.Api.Services
                 return null;
             }
 
+            var currentTime = TimeUtils.GetCurrentTime();
             var order = new Order
             {
                 UserId = buyerId,
-                OrderNumber = $"SYN{DateTime.UtcNow:yyyyMMddHHmmss}{new Random().Next(100, 999)}",
+                OrderNumber = $"SYN{currentTime:yyyyMMddHHmmss}{new Random().Next(100, 999)}",
                 TotalAmount = artwork.FixedPrice ?? 0,
                 Status = OrderStatus.Pending,
-                CreatedAt = TimeUtils.GetCurrentTime(),
-                UpdatedAt = TimeUtils.GetCurrentTime(),
+                PaymentType = "VNPay",
+                PaymentTime = currentTime,
+                CreatedAt = currentTime,
+                UpdatedAt = currentTime,
                 OrderItems = new List<OrderItem>
                 {
                     new OrderItem
@@ -72,12 +78,18 @@ namespace Synos.Api.Services
             };
 
             var createdOrder = await _orderRepository.CreateOrderAsync(order);
-            return await _orderRepository.GetOrderByIdAsync(createdOrder.Id);
+            
+            // Mark artwork as Reserved when order is created
+            artwork.Status = ArtworkStatus.Reserved;
+            await _artworkRepository.UpdateArtworkAsync(artwork.Id, artwork);
+            
+            var fullOrder = await _orderRepository.GetOrderByIdAsync(createdOrder.Id);
+            return fullOrder != null ? MapOrderToDto(fullOrder) : null;
         }
 
-        public string? InitiatePaymentAsync(long buyerId, long orderId, HttpContext httpContext) // Removed async
+        public async Task<string?> InitiatePaymentAsync(long buyerId, long orderId, HttpContext httpContext)
         {
-            var order = _orderRepository.GetOrderByIdAsync(orderId).Result; // Synchronous call for demonstration
+            var order = await _orderRepository.GetOrderByIdAsync(orderId);
             if (order == null || order.UserId != buyerId)
             {
                 // Returning null for not found or forbidden
@@ -100,7 +112,7 @@ namespace Synos.Api.Services
             return _vnPayService.CreatePaymentUrl(paymentRequest, httpContext);
         }
 
-        public async Task<VnPayReturnDto> ProcessVnPayReturnAsync(IQueryCollection collections)
+        public Task<VnPayReturnDto> ProcessVnPayReturnAsync(IQueryCollection collections)
         {
             var response = _vnPayService.ProcessIpn(collections); // Use the same validation logic for the return URL
             var txnRef = collections["vnp_TxnRef"].FirstOrDefault() ?? string.Empty;
@@ -125,7 +137,7 @@ namespace Synos.Api.Services
                 _logger.LogWarning("VNPay return failed for order {OrderId}. User redirected. Response code: {ResponseCode}", orderId, response.RspCode);
             }
 
-            return returnDto;
+            return Task.FromResult(returnDto);
         }
 
         public async Task<VnPayIpnResponseDto> ProcessVnPayIpnAsync(IQueryCollection collections)
@@ -190,12 +202,19 @@ namespace Synos.Api.Services
                 {
                     _logger.LogInformation("VNPay IPN payment successful for order {OrderId}", orderId);
                     await _orderRepository.UpdateOrderStatusAsync(orderId, OrderStatus.Paid);
+                    
+                    // Update artwork status to Sold when payment is completed
+                    await UpdateArtworkStatusAfterPayment(orderId);
+                    
                     _logger.LogInformation("Order {OrderId} status updated to Paid via IPN", orderId);
                 }
                 else // Payment failed
                 {
                     _logger.LogWarning("VNPay IPN payment failed for order {OrderId}. Response code: {ResponseCode}", orderId, collections["vnp_ResponseCode"]);
                     await _orderRepository.UpdateOrderStatusAsync(orderId, OrderStatus.Cancelled);
+                    
+                    // Release artwork back to available status when payment fails
+                    await ReleaseArtworkFromOrder(orderId);
                 }
 
                 return new VnPayIpnResponseDto { RspCode = "00", Message = "Confirm Success" };
@@ -209,28 +228,22 @@ namespace Synos.Api.Services
         }
 
         // Auction Methods
-        public async Task<IEnumerable<AuctionData>> GetActiveAuctionsAsync()
+        public async Task<IEnumerable<Auction>> GetActiveAuctionsAsync()
         {
-            return await _auctionFileManager.GetAllActiveAuctionsAsync();
+            return await _auctionRepository.GetActiveAuctionsAsync();
         }
 
-        public async Task<AuctionData?> GetAuctionDetailsAsync(long auctionId) // Changed parameter to long
+        public async Task<Auction?> GetAuctionDetailsAsync(long auctionId)
         {
-            return await _auctionFileManager.GetAuctionDetailsAsync(auctionId);
+            return await _auctionRepository.GetAuctionByIdAsync(auctionId);
         }
 
-        public async Task<bool> PlaceBidAsync(long auctionId, long memberId, decimal amount) // Changed parameters to long
+        public async Task<bool> PlaceBidAsync(long auctionId, long memberId, decimal amount)
         {
-            var auction = await _auctionFileManager.GetAuctionDetailsAsync(auctionId);
-            if (auction == null || auction.EndTime <= DateTime.UtcNow)
+            var auction = await _auctionRepository.GetAuctionByIdAsync(auctionId);
+            if (auction == null || auction.EndTime <= TimeUtils.GetCurrentTime() || auction.Status != AuctionStatus.Running)
             {
-                return false; // Auction not found or has ended
-            }
-
-            var highestBid = auction.Bids.Any() ? auction.Bids.Max(b => b.Amount) : auction.StartingPrice;
-            if (amount <= highestBid)
-            {
-                return false; // Bid must be higher than the current highest bid
+                return false; // Auction not found, has ended, or not running
             }
 
             var member = await _memberRepository.GetMemberByIdAsync(memberId);
@@ -239,16 +252,139 @@ namespace Synos.Api.Services
                 return false; // Member not found
             }
 
-            var newBid = new BidData
+            // Ensure AuctionData folder exists
+            var auctionDataPath = Path.Combine(_webHostEnvironment.ContentRootPath, "AuctionData");
+            if (!Directory.Exists(auctionDataPath))
             {
-                MemberId = memberId,
-                MemberName = member.FullName, // Changed from Name to FullName
-                Amount = amount,
-                Timestamp = DateTime.UtcNow
+                Directory.CreateDirectory(auctionDataPath);
+            }
+
+            // Get current bids from JSON file (file name is just the auction ID)
+            var bidsFilePath = Path.Combine(auctionDataPath, $"{auctionId}.json");
+            var currentBids = new List<object>();
+            decimal highestBid = auction.StartingPrice;
+
+            if (File.Exists(bidsFilePath))
+            {
+                var existingData = await File.ReadAllTextAsync(bidsFilePath);
+                var bidsArray = JsonSerializer.Deserialize<JsonElement>(existingData);
+                
+                foreach (var bid in bidsArray.EnumerateArray())
+                {
+                    if (bid.TryGetProperty("amount", out var amountProp))
+                    {
+                        var bidAmount = amountProp.GetDecimal();
+                        if (bidAmount > highestBid)
+                        {
+                            highestBid = bidAmount;
+                        }
+                    }
+                    var deserializedBid = JsonSerializer.Deserialize<object>(bid.GetRawText());
+                    if (deserializedBid != null)
+                    {
+                        currentBids.Add(deserializedBid);
+                    }
+                }
+            }
+
+            // Validate bid amount (must be higher than current highest bid and meet minimum increment)
+            if (amount <= highestBid || amount < auction.StartingPrice + auction.MinimumIncrement)
+            {
+                return false; // Bid not high enough
+            }
+
+            // Add new bid with simplified structure: buyerId, amount, time
+            var newBid = new
+            {
+                buyerId = memberId,
+                amount = amount,
+                time = TimeUtils.GetCurrentTime()
             };
 
-            await _auctionFileManager.AddBidAsync(auctionId, newBid);
+            currentBids.Add(newBid);
+
+            // Save updated bids array to JSON file
+            await File.WriteAllTextAsync(bidsFilePath, JsonSerializer.Serialize(currentBids, new JsonSerializerOptions { WriteIndented = true }));
             return true;
+        }
+
+        private async Task UpdateArtworkStatusAfterPayment(long orderId)
+        {
+            try
+            {
+                // Get order items to find the artworks
+                var orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
+                
+                foreach (var orderItem in orderItems)
+                {
+                    var artwork = await _artworkRepository.GetArtworkByIdAsync(orderItem.ArtworkId);
+                    if (artwork != null)
+                    {
+                        // Update artwork status from Reserved to Sold
+                        artwork.Status = ArtworkStatus.Sold;
+                        artwork.UpdatedAt = TimeUtils.GetCurrentTime();
+                        await _artworkRepository.UpdateArtworkAsync(artwork.Id, artwork);
+                        
+                        _logger.LogInformation("Artwork {ArtworkId} status updated to Sold after payment for order {OrderId}", 
+                            artwork.Id, orderId);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating artwork status after payment for order {OrderId}", orderId);
+            }
+        }
+
+        private async Task ReleaseArtworkFromOrder(long orderId)
+        {
+            try
+            {
+                // Get order items to find the artworks
+                var orderItems = await _orderRepository.GetOrderItemsByOrderIdAsync(orderId);
+                
+                foreach (var orderItem in orderItems)
+                {
+                    var artwork = await _artworkRepository.GetArtworkByIdAsync(orderItem.ArtworkId);
+                    if (artwork != null && artwork.Status == ArtworkStatus.Reserved)
+                    {
+                        // Release artwork back to Available status
+                        artwork.Status = ArtworkStatus.Available;
+                        artwork.UpdatedAt = TimeUtils.GetCurrentTime();
+                        await _artworkRepository.UpdateArtworkAsync(artwork.Id, artwork);
+                        
+                        _logger.LogInformation("Artwork {ArtworkId} released back to Available after order {OrderId} cancellation", 
+                            artwork.Id, orderId);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error releasing artwork for cancelled order {OrderId}", orderId);
+            }
+        }
+
+        private OrderResponseDto MapOrderToDto(Order order)
+        {
+            return new OrderResponseDto
+            {
+                Id = order.Id,
+                OrderNumber = order.OrderNumber,
+                TotalAmount = order.TotalAmount,
+                Currency = order.Currency,
+                PaymentType = order.PaymentType,
+                Status = order.Status.ToString(),
+                CreatedAt = order.CreatedAt,
+                UpdatedAt = order.UpdatedAt,
+                OrderItems = order.OrderItems?.Select(item => new OrderItemDto
+                {
+                    Id = item.Id,
+                    ArtworkId = item.ArtworkId,
+                    Total = item.Total,
+                    ArtworkTitle = item.Artwork?.Title ?? "N/A",
+                    ArtworkImageUrl = item.Artwork?.ArtworkImages?.FirstOrDefault(i => i.IsPrimary)?.FilePath ?? string.Empty
+                }).ToList() ?? new List<OrderItemDto>()
+            };
         }
     }
 }

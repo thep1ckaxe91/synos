@@ -89,4 +89,19 @@ namespace Synos.Api.DTOs
         public decimal PayoutAmount { get; set; }
         public string BuyerName { get; set; } = string.Empty;
     }
+
+    public class AuctionResponseDto
+    {
+        public long Id { get; set; }
+        public long ArtworkId { get; set; }
+        public string ArtworkTitle { get; set; } = string.Empty;
+        public DateTime StartTime { get; set; }
+        public DateTime EndTime { get; set; }
+        public decimal StartingPrice { get; set; }
+        public decimal? ReservePrice { get; set; }
+        public decimal MinimumIncrement { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public long? WinnerBidId { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
 }

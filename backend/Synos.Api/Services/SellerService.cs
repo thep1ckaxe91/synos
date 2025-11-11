@@ -2,10 +2,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Synos.Api.DTOs;
 using Synos.Api.Models;
-using Synos.Api.Models.AuctionDataModels;
 using Synos.Api.Repositories;
 using Synos.Api.Utils;
-using Synos.Api.Services.AuctionServices;
 using System.Linq;
 
 namespace Synos.Api.Services
@@ -20,7 +18,6 @@ namespace Synos.Api.Services
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IAuctionRepository _auctionRepository;
-        private readonly IAuctionFileManagerService _auctionFileManager;
 
         public SellerService(
             IArtworkRepository artworkRepository,
@@ -29,9 +26,8 @@ namespace Synos.Api.Services
             ICategoryRepository categoryRepository,
             ICommissionRepository commissionRepository,
             IWebHostEnvironment webHostEnvironment,
-            IHttpContextAccessor httpContextAccessor)
-            IAuctionRepository auctionRepository,
-            IAuctionFileManagerService auctionFileManager)
+            IHttpContextAccessor httpContextAccessor,
+            IAuctionRepository auctionRepository)
         {
             _artworkRepository = artworkRepository;
             _orderRepository = orderRepository;
@@ -41,7 +37,6 @@ namespace Synos.Api.Services
             _webHostEnvironment = webHostEnvironment;
             _httpContextAccessor = httpContextAccessor;
             _auctionRepository = auctionRepository;
-            _auctionFileManager = auctionFileManager;
         }
 
         private string GetBaseUrl()
@@ -112,16 +107,16 @@ namespace Synos.Api.Services
                 Price = createdArtwork.FixedPrice ?? 0,
                 SaleType = createdArtwork.IsFor.ToString(),
                 Status = createdArtwork.Status.ToString(),
-                PrimaryImage = ConvertFilePathToUrl(createdArtwork.ArtworkImages.FirstOrDefault(i => i.IsPrimary)?.FilePath),
+                PrimaryImage = ConvertFilePathToUrl(createdArtwork.ArtworkImages.FirstOrDefault(i => i.IsPrimary)?.FilePath ?? string.Empty),
                 Images = createdArtwork.ArtworkImages?.Select(img => new ArtworkImageDto
                 {
                     Id = img.Id,
-                    ImageUrl = ConvertFilePathToUrl(img.FilePath),
+                    ImageUrl = ConvertFilePathToUrl(img.FilePath ?? string.Empty),
                     IsPrimary = img.IsPrimary,
                     UploadedAt = img.UploadedAt
                 }).ToList() ?? new List<ArtworkImageDto>(),
                 CreatedAt = createdArtwork.CreatedAt,
-                CategoryName = createdArtwork.Category?.Name ?? "N/A" // Changed to createdArtwork.Category?.Name
+                CategoryName = createdArtwork.Category?.Name ?? "N/A"
             };
         }
 
@@ -209,11 +204,11 @@ namespace Synos.Api.Services
                     Price = createdArtwork.FixedPrice ?? 0,
                     SaleType = createdArtwork.IsFor.ToString(),
                     Status = createdArtwork.Status.ToString(),
-                    PrimaryImage = ConvertFilePathToUrl(createdArtwork.ArtworkImages.FirstOrDefault(i => i.IsPrimary)?.FilePath),
+                    PrimaryImage = ConvertFilePathToUrl(createdArtwork.ArtworkImages.FirstOrDefault(i => i.IsPrimary)?.FilePath ?? string.Empty),
                     Images = createdArtwork.ArtworkImages?.Select(img => new ArtworkImageDto
                     {
                         Id = img.Id,
-                        ImageUrl = ConvertFilePathToUrl(img.FilePath),
+                        ImageUrl = ConvertFilePathToUrl(img.FilePath ?? string.Empty),
                         IsPrimary = img.IsPrimary,
                         UploadedAt = img.UploadedAt
                     }).ToList() ?? new List<ArtworkImageDto>(),
@@ -226,7 +221,7 @@ namespace Synos.Api.Services
                 // If artwork creation fails, clean up uploaded images
                 foreach (var imagePath in uploadedImagePaths)
                 {
-                    ImageUploadUtils.DeleteArtworkImage(imagePath, _webHostEnvironment.WebRootPath);
+                    ImageUploadUtils.DeleteArtworkImage(imagePath, _webHostEnvironment.WebRootPath ?? string.Empty);
                 }
                 throw;
             }
@@ -244,11 +239,11 @@ namespace Synos.Api.Services
                 Price = artwork.FixedPrice ?? 0,
                 SaleType = artwork.IsFor.ToString(),
                 Status = artwork.Status.ToString(),
-                PrimaryImage = ConvertFilePathToUrl(artwork.ArtworkImages?.FirstOrDefault(i => i.IsPrimary)?.FilePath),
+                PrimaryImage = ConvertFilePathToUrl(artwork.ArtworkImages?.FirstOrDefault(i => i.IsPrimary)?.FilePath ?? string.Empty),
                 Images = artwork.ArtworkImages?.Select(img => new ArtworkImageDto
                 {
                     Id = img.Id,
-                    ImageUrl = ConvertFilePathToUrl(img.FilePath),
+                    ImageUrl = ConvertFilePathToUrl(img.FilePath ?? string.Empty),
                     IsPrimary = img.IsPrimary,
                     UploadedAt = img.UploadedAt
                 }).ToList() ?? new List<ArtworkImageDto>(),
@@ -295,7 +290,7 @@ namespace Synos.Api.Services
                         {
                             OrderId = order.Id,
                             ArtworkTitle = item.Artwork.Title,
-                            PrimaryImage = ConvertFilePathToUrl(item.Artwork.ArtworkImages?.FirstOrDefault(i => i.IsPrimary)?.FilePath),
+                            PrimaryImage = ConvertFilePathToUrl(item.Artwork.ArtworkImages?.FirstOrDefault(i => i.IsPrimary)?.FilePath ?? string.Empty),
                             SoldAt = order.PaymentTime,
                             SalePrice = item.Total,
                             CommissionAmount = commissionAmount,
@@ -309,7 +304,7 @@ namespace Synos.Api.Services
             return salesHistory;
         }
 
-        public async Task<AuctionData?> CreateAuctionAsync(long sellerId, CreateAuctionDto createAuctionDto)
+        public async Task<AuctionResponseDto?> CreateAuctionAsync(long sellerId, CreateAuctionDto createAuctionDto)
         {
             var seller = await _memberRepository.GetMemberByIdAsync(sellerId);
             if (seller == null || seller.Role != MemberRole.Seller)
@@ -323,7 +318,7 @@ namespace Synos.Api.Services
                 return null; // Artwork not found, not owned by seller, not for auction, or not available
             }
 
-            if (createAuctionDto.StartTime >= createAuctionDto.EndTime || createAuctionDto.StartTime < DateTime.UtcNow)
+            if (createAuctionDto.StartTime >= createAuctionDto.EndTime || createAuctionDto.StartTime < TimeUtils.GetCurrentTime())
             {
                 return null; // Invalid auction times
             }
@@ -334,6 +329,7 @@ namespace Synos.Api.Services
                 StartTime = createAuctionDto.StartTime,
                 EndTime = createAuctionDto.EndTime,
                 StartingPrice = createAuctionDto.StartingPrice,
+                ReservePrice = createAuctionDto.ReservePrice,
                 Status = AuctionStatus.Scheduled // Initially scheduled
             };
 
@@ -343,9 +339,38 @@ namespace Synos.Api.Services
                 return null;
             }
 
-            // Create the JSON file for the active auction
-            var auctionData = await _auctionFileManager.CreateAuctionFileAsync(createdAuction);
-            return auctionData;
+            // Create the JSON bidding file for the auction
+            await CreateBiddingFileAsync(createdAuction);
+            
+            // Return DTO instead of entity to avoid circular references
+            return new AuctionResponseDto
+            {
+                Id = createdAuction.Id,
+                ArtworkId = createdAuction.ArtworkId,
+                ArtworkTitle = artwork.Title,
+                StartTime = createdAuction.StartTime,
+                EndTime = createdAuction.EndTime,
+                StartingPrice = createdAuction.StartingPrice,
+                ReservePrice = createdAuction.ReservePrice,
+                MinimumIncrement = createdAuction.MinimumIncrement,
+                Status = createdAuction.Status.ToString(),
+                WinnerBidId = createdAuction.WinnerBidId,
+                CreatedAt = createdAuction.CreatedAt
+            };
+        }
+
+        private async Task CreateBiddingFileAsync(Auction auction)
+        {
+            var auctionDataPath = Path.Combine(_webHostEnvironment.ContentRootPath, "AuctionData");
+            if (!Directory.Exists(auctionDataPath))
+            {
+                Directory.CreateDirectory(auctionDataPath);
+            }
+
+            var biddingData = new List<object>(); // Just an empty array of bids
+
+            var filePath = Path.Combine(auctionDataPath, $"{auction.Id}.json");
+            await File.WriteAllTextAsync(filePath, System.Text.Json.JsonSerializer.Serialize(biddingData, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
         }
     }
 }

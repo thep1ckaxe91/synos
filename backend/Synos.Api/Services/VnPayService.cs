@@ -1,4 +1,5 @@
 using Synos.Api.DTOs;
+using Synos.Api.Utils;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -34,7 +35,7 @@ namespace Synos.Api.Services
             pay.AddRequestData("vnp_Command", vnpayConfig["Command"] ?? "pay");
             pay.AddRequestData("vnp_TmnCode", tmnCode);
             pay.AddRequestData("vnp_Amount", ((long)model.Amount * 100).ToString());
-            pay.AddRequestData("vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss"));
+            pay.AddRequestData("vnp_CreateDate", TimeUtils.GetCurrentTime().ToString("yyyyMMddHHmmss"));
             pay.AddRequestData("vnp_CurrCode", vnpayConfig["CurrCode"] ?? "VND");
             pay.AddRequestData("vnp_IpAddr", GetIpAddress(context));
             pay.AddRequestData("vnp_Locale", vnpayConfig["Locale"] ?? "vn");
@@ -83,13 +84,13 @@ namespace Synos.Api.Services
             if (vnpResponseCode == "00")
             {
                 // Payment successful
-                // TODO: Update database status for order/payment with `orderId`
+                // Note: Database updates are handled in BuyerService.ProcessVnPayIpnAsync()
                 return new VnPayIpnResponseDto { RspCode = "00", Message = "Confirm Success" };
             }
             else
             {
                 // Payment failed
-                // TODO: Update database status for order/payment with `orderId`
+                // Note: Database updates are handled in BuyerService.ProcessVnPayIpnAsync()
                 return new VnPayIpnResponseDto { RspCode = vnpResponseCode, Message = "Confirm Failed" };
             }
         }

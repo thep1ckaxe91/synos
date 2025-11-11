@@ -16,4 +16,7 @@ public class CreateAuctionDto
 
     [Required]
     public DateTime EndTime { get; set; }
+
+    [Range(1, (double)decimal.MaxValue)]
+    public decimal? ReservePrice { get; set; }
 }

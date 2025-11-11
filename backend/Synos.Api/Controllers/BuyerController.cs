@@ -47,8 +47,6 @@ namespace Synos.Api.Controllers
 
             if (result == null)
             {
-                // This can be null if artwork is not available or if the user is not a buyer.
-                // We return BadRequest, but a more specific error could be determined if needed.
                 return BadRequest(new { message = "Could not place order. The artwork may not be available or your account is not authorized." });
             }
 
@@ -56,7 +54,7 @@ namespace Synos.Api.Controllers
         }
 
         [HttpPost("orders/{orderId}/pay")]
-        public IActionResult InitiatePayment(long orderId) // Changed to synchronous
+        public async Task<IActionResult> InitiatePayment(long orderId)
         {
             var memberId = HttpContext.GetCurrentMemberId();
             if (memberId == null)
@@ -64,7 +62,7 @@ namespace Synos.Api.Controllers
                 return Unauthorized(new { message = "Invalid token." });
             }
 
-            var paymentUrl = _buyerService.InitiatePaymentAsync(memberId.Value, orderId, HttpContext);
+            var paymentUrl = await _buyerService.InitiatePaymentAsync(memberId.Value, orderId, HttpContext);
 
             if (paymentUrl == null)
             {

@@ -150,6 +150,34 @@ namespace Synos.Api.Services
             return artworks.Select(ProcessArtworkImages);
         }
 
+        private async Task<int> GetArtworkFavoritesCountAsync(long artworkId)
+        {
+            try
+            {
+                // Use AdminRepository to get the count since it has access to all related data
+                var artworkDetails = await _adminRepository.GetArtworkDetailsForAdminAsync(artworkId);
+                return artworkDetails?.TotalFavorites ?? 0;
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
+        }
+
+        private async Task<int> GetArtworkOrdersCountAsync(long artworkId)
+        {
+            try
+            {
+                // Use AdminRepository to get the count since it has access to all related data
+                var artworkDetails = await _adminRepository.GetArtworkDetailsForAdminAsync(artworkId);
+                return artworkDetails?.TotalOrders ?? 0;
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
+        }
+
         // ===========================================
         // AUTHENTICATION
         // ===========================================
@@ -465,6 +493,9 @@ namespace Synos.Api.Services
                 var result = new List<AdminArtworkViewDto>();
                 foreach (var artwork in paginatedArtworks)
                 {
+                    // Get seller information
+                    var seller = await _memberRepository.GetMemberByIdAsync(artwork.SellerId);
+                    
                     var dto = new AdminArtworkViewDto
                     {
                         Id = artwork.Id,
@@ -472,6 +503,7 @@ namespace Synos.Api.Services
                         Title = artwork.Title,
                         Description = artwork.Description,
                         CategoryId = artwork.CategoryId,
+                        CategoryName = artwork.Category?.Name ?? "N/A",
                         CreationYear = artwork.CreationYear,
                         Dimensions = artwork.Dimensions,
                         Condition = artwork.Condition,
@@ -482,17 +514,24 @@ namespace Synos.Api.Services
                         CreatedAt = artwork.CreatedAt,
                         UpdatedAt = artwork.UpdatedAt,
                         DeletedAt = artwork.DeletedAt,
-                        // Additional seller info would need to be populated from Member repository
-                        SellerName = "Seller Name", // TODO: Get from member repository
-                        SellerEmail = "seller@example.com", // TODO: Get from member repository
-                        TotalImages = 0, // TODO: Get from artwork images
-                        TotalFavorites = 0, // TODO: Get from favorites
-                        TotalOrders = 0 // TODO: Get from orders
+                        SellerName = seller?.FullName ?? "Unknown Seller",
+                        SellerEmail = seller?.Email ?? "N/A",
+                        PrimaryImageUrl = artwork.ArtworkImages?.FirstOrDefault(i => i.IsPrimary)?.FilePath,
+                        Images = artwork.ArtworkImages?.Select(img => new ArtworkImageDto
+                        {
+                            Id = img.Id,
+                            ImageUrl = img.FilePath,
+                            IsPrimary = img.IsPrimary,
+                            UploadedAt = img.UploadedAt
+                        }).ToList() ?? new List<ArtworkImageDto>(),
+                        TotalImages = artwork.ArtworkImages?.Count ?? 0,
+                        TotalFavorites = await GetArtworkFavoritesCountAsync(artwork.Id),
+                        TotalOrders = await GetArtworkOrdersCountAsync(artwork.Id)
                     };
                     result.Add(dto);
                 }
                 
-                return result;
+                return ProcessArtworkImagesList(result);
             }
             catch (Exception)
             {

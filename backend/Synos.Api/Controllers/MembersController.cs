@@ -174,6 +174,72 @@ namespace Synos.Api.Controllers
             return Ok(gallery);
         }
 
+        /// <summary>
+        /// Get my favorites with detailed information
+        /// </summary>
+        [HttpGet("me/favorites")]
+        [RequireAuth]
+        public async Task<ActionResult<IEnumerable<FavoriteDto>>> GetMyFavorites()
+        {
+            var memberId = HttpContext.GetCurrentMemberId();
+            if (memberId == null)
+                return Unauthorized(new { message = "Invalid token" });
+
+            var favorites = await _memberService.GetFavoritesAsync(memberId.Value);
+            return Ok(favorites);
+        }
+
+        /// <summary>
+        /// Add artwork to favorites
+        /// </summary>
+        [HttpPost("me/favorites")]
+        [RequireAuth]
+        public async Task<ActionResult> AddToFavorites([FromBody] AddToFavoriteDto addToFavoriteDto)
+        {
+            var memberId = HttpContext.GetCurrentMemberId();
+            if (memberId == null)
+                return Unauthorized(new { message = "Invalid token" });
+
+            var success = await _memberService.AddToFavoritesAsync(memberId.Value, addToFavoriteDto);
+            if (!success)
+                return BadRequest(new { message = "Failed to add artwork to favorites. Artwork may not exist or is already in favorites." });
+
+            return Ok(new { message = "Artwork added to favorites successfully" });
+        }
+
+        /// <summary>
+        /// Remove artwork from favorites
+        /// </summary>
+        [HttpDelete("me/favorites/{artworkId}")]
+        [RequireAuth]
+        public async Task<ActionResult> RemoveFromFavorites(long artworkId)
+        {
+            var memberId = HttpContext.GetCurrentMemberId();
+            if (memberId == null)
+                return Unauthorized(new { message = "Invalid token" });
+
+            var success = await _memberService.RemoveFromFavoritesAsync(memberId.Value, artworkId);
+            if (!success)
+                return BadRequest(new { message = "Failed to remove artwork from favorites. Artwork may not be in favorites." });
+
+            return Ok(new { message = "Artwork removed from favorites successfully" });
+        }
+
+        /// <summary>
+        /// Check if artwork is in favorites
+        /// </summary>
+        [HttpGet("me/favorites/{artworkId}/check")]
+        [RequireAuth]
+        public async Task<ActionResult<object>> CheckFavorite(long artworkId)
+        {
+            var memberId = HttpContext.GetCurrentMemberId();
+            if (memberId == null)
+                return Unauthorized(new { message = "Invalid token" });
+
+            var isFavorite = await _memberService.IsFavoriteAsync(memberId.Value, artworkId);
+            return Ok(new { artworkId = artworkId, isFavorite = isFavorite });
+        }
+
         [HttpGet("health")]
         [AllowAnonymous]
         public IActionResult HealthCheck()
@@ -190,7 +256,10 @@ namespace Synos.Api.Controllers
                     "View Profile",
                     "Update Profile",
                     "Change Password",
-                    "Personal Gallery Management"
+                    "Personal Gallery Management",
+                    "Favorites Management",
+                    "Add/Remove Favorites",
+                    "Check Favorite Status"
                 }
             });
         }

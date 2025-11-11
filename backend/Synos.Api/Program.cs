@@ -13,7 +13,12 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
 builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
 
@@ -30,7 +35,6 @@ builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IExhibitionRepository, ExhibitionRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IAuctionRepository, AuctionRepository>();
-// TODO: Fix CommissionRepository - model mismatch
 builder.Services.AddScoped<ICommissionRepository, CommissionRepository>();
 
 // Register services
@@ -41,9 +45,9 @@ builder.Services.AddScoped<IBuyerService, BuyerService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IVnPayService, VnPayService>();
 
-// Register auction services
-builder.Services.AddSingleton<IAuctionFileManagerService, AuctionFileManagerService>();
-builder.Services.AddHostedService<AuctionProcessorService>();
+// Register background services for auction and order processing
+builder.Services.AddHostedService<AuctionEndingService>();
+builder.Services.AddHostedService<OrderExpirationService>();
 
 
 // Configure JWT Authentication

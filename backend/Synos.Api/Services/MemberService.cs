@@ -18,6 +18,12 @@ namespace Synos.Api.Services
         Task<bool> AddArtworkToGalleryAsync(long memberId, AddToGalleryDto addDto);
         Task<bool> RemoveArtworkFromGalleryAsync(long memberId, long artworkId);
         Task<bool> LogoutAsync(long memberId);
+        
+        // Favorite methods with proper DTOs
+        Task<IEnumerable<FavoriteDto>> GetFavoritesAsync(long memberId);
+        Task<bool> AddToFavoritesAsync(long memberId, AddToFavoriteDto addToFavoriteDto);
+        Task<bool> RemoveFromFavoritesAsync(long memberId, long artworkId);
+        Task<bool> IsFavoriteAsync(long memberId, long artworkId);
     }
 
     public class MemberService : IMemberService
@@ -231,6 +237,58 @@ namespace Synos.Api.Services
             using var sha256 = SHA256.Create();
             var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password + "SynosSecretSalt"));
             return Convert.ToBase64String(hashedBytes);
+        }
+
+        // Favorite methods with proper DTOs
+        public async Task<IEnumerable<FavoriteDto>> GetFavoritesAsync(long memberId)
+        {
+            var favorites = await _memberRepository.GetMemberFavoritesAsync(memberId);
+            
+            return favorites.Select(f => new FavoriteDto
+            {
+                ArtworkId = f.ArtworksId,
+                ArtworkTitle = f.Artwork?.Title ?? "Unknown",
+                ArtworkDescription = f.Artwork?.Description,
+                FixedPrice = f.Artwork?.FixedPrice,
+                ArtworkFor = f.Artwork?.IsFor.ToString() ?? "Unknown",
+                Status = f.Artwork?.Status.ToString() ?? "Unknown",
+                PrimaryImage = ConvertFilePathToUrl(f.Artwork?.ArtworkImages?.FirstOrDefault(img => img.IsPrimary)?.FilePath ?? string.Empty),
+                SellerName = f.Artwork?.Seller?.FullName ?? "Unknown Seller",
+                CategoryName = f.Artwork?.Category?.Name ?? "Unknown Category",
+                AddedToFavoritesAt = f.CreatedAt
+            }).ToList();
+        }
+
+        public async Task<bool> AddToFavoritesAsync(long memberId, AddToFavoriteDto addToFavoriteDto)
+        {
+            return await _memberRepository.AddToFavoritesAsync(memberId, addToFavoriteDto.ArtworkId);
+        }
+
+        public async Task<bool> RemoveFromFavoritesAsync(long memberId, long artworkId)
+        {
+            return await _memberRepository.RemoveFromFavoritesAsync(memberId, artworkId);
+        }
+
+        public async Task<bool> IsFavoriteAsync(long memberId, long artworkId)
+        {
+            return await _memberRepository.IsFavoriteAsync(memberId, artworkId);
+        }
+
+        private string ConvertFilePathToUrl(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath))
+                return string.Empty;
+
+            // Simple URL conversion - you may need to adjust this based on your setup
+            var baseUrl = "http://localhost:8080"; // This should come from configuration
+            var normalizedPath = filePath.Replace("\\", "/");
+            
+            if (normalizedPath.StartsWith("uploads/"))
+            {
+                return $"{baseUrl}/{normalizedPath}";
+            }
+            
+            return $"{baseUrl}/uploads/{normalizedPath}";
         }
 
         // JWT token generation is now handled by IJwtService

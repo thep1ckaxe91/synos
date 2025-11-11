@@ -67,4 +67,23 @@ namespace Synos.Api.DTOs
         public MemberDto? Member { get; set; }
         public string? Token { get; set; }
     }
+
+    public class AddToFavoriteDto
+    {
+        public long ArtworkId { get; set; }
+    }
+
+    public class FavoriteDto
+    {
+        public long ArtworkId { get; set; }
+        public string ArtworkTitle { get; set; } = string.Empty;
+        public string? ArtworkDescription { get; set; }
+        public decimal? FixedPrice { get; set; }
+        public string ArtworkFor { get; set; } = string.Empty; // "Fixed" or "Auction"
+        public string Status { get; set; } = string.Empty;
+        public string? PrimaryImage { get; set; }
+        public string SellerName { get; set; } = string.Empty;
+        public string CategoryName { get; set; } = string.Empty;
+        public DateTime AddedToFavoritesAt { get; set; }
+    }
 }

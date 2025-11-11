@@ -319,11 +319,40 @@ namespace Synos.Api.Controllers
         }
 
         /// <summary>
-        /// Approve artwork upload by seller
+        /// Approve artwork upload by seller (simple approval without note)
         /// </summary>
         [HttpPost("artworks/{artworkId}/approve")]
         [JwtAuthorize("Admin")]
-        public async Task<ActionResult> ApproveArtwork(long artworkId, [FromBody] ApproveArtworkDto approveDto)
+        public async Task<ActionResult> ApproveArtwork(long artworkId)
+        {
+            try
+            {
+                var adminId = HttpContext.GetCurrentAdminId();
+                if (adminId == null)
+                    return Unauthorized(new { Message = "Invalid admin token" });
+                
+                var result = await _adminService.ApproveArtworkAsync(adminId.Value, artworkId, null);
+                
+                if (!result)
+                {
+                    return BadRequest(new { Message = "Failed to approve artwork" });
+                }
+
+                return Ok(new { Message = "Artwork approved successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving artwork");
+                return StatusCode(500, new { Message = "An error occurred while approving artwork" });
+            }
+        }
+
+        /// <summary>
+        /// Approve artwork upload by seller with admin note
+        /// </summary>
+        [HttpPost("artworks/{artworkId}/approve-with-note")]
+        [JwtAuthorize("Admin")]
+        public async Task<ActionResult> ApproveArtworkWithNote(long artworkId, [FromBody] ApproveArtworkDto approveDto)
         {
             try
             {
@@ -342,7 +371,7 @@ namespace Synos.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error approving artwork");
+                _logger.LogError(ex, "Error approving artwork with note");
                 return StatusCode(500, new { Message = "An error occurred while approving artwork" });
             }
         }

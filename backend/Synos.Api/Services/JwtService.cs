@@ -51,7 +51,7 @@ namespace Synos.Api.Services
                 new Claim("IsActive", member.IsActive.ToString()),
                 new Claim("UserType", "Member"), // Distinguish from Admin
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
+                new Claim(JwtRegisteredClaimNames.Iat, TimeUtils.GetCurrentUtcTime().ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
             };
 
             // Add phone if available
@@ -89,7 +89,7 @@ namespace Synos.Api.Services
                 new Claim("IsActive", admin.IsActive.ToString()),
                 new Claim("UserType", "Admin"), // Distinguish from Member
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
+                new Claim(JwtRegisteredClaimNames.Iat, TimeUtils.GetCurrentUtcTime().ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
             };
 
             // Add phone if available
