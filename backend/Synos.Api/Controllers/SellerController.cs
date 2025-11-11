@@ -19,20 +19,39 @@ namespace Synos.Api.Controllers
         }
 
         [HttpPost("artworks")]
-        public async Task<ActionResult<SellerArtworkDto>> CreateArtwork([FromBody] CreateArtworkDto artworkDto)
+        public async Task<ActionResult<SellerArtworkDto>> CreateArtwork([FromForm] CreateArtworkWithFilesDto artworkDto)
         {
-            var sellerId = GetCurrentSellerId();
-            if (sellerId == null)
+            try
             {
-                return Unauthorized(new { message = "Invalid token or not a seller." });
-            }
+                var sellerId = GetCurrentSellerId();
+                if (sellerId == null)
+                {
+                    return Unauthorized(new { message = "Invalid token or not a seller." });
+                }
 
-            var artwork = await _sellerService.CreateArtworkAsync(sellerId.Value, artworkDto);
-            if (artwork == null)
-            {
-                return BadRequest(new { message = "Failed to create artwork." });
+                // Validate that at least one image is provided
+                if (artworkDto.Images == null || !artworkDto.Images.Any())
+                {
+                    return BadRequest(new { message = "At least one image is required." });
+                }
+
+                var artwork = await _sellerService.CreateArtworkWithFilesAsync(sellerId.Value, artworkDto);
+                if (artwork == null)
+                {
+                    return BadRequest(new { message = "Failed to create artwork." });
+                }
+
+                return CreatedAtAction(nameof(GetArtworks), new { }, artwork);
             }
-            return CreatedAtAction(nameof(GetArtworks), new { }, artwork);
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception)
+            {
+                // Log the exception in a real application
+                return StatusCode(500, new { message = "An error occurred while creating the artwork." });
+            }
         }
 
         [HttpGet("artworks")]

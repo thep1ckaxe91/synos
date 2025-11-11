@@ -32,6 +32,9 @@ COPY --from=publish /app/publish .
 # Copy source code and build artifacts for migrations
 COPY --from=build /src/Synos.Api /app/source
 
+# Create wwwroot directory and uploads subdirectory for file uploads
+RUN mkdir -p /app/wwwroot/uploads/ArtworkImg
+
 # Copy scripts
 COPY scripts/ /app/scripts/
 

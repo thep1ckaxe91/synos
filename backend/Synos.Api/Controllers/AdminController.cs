@@ -318,6 +318,83 @@ namespace Synos.Api.Controllers
             }
         }
 
+        /// <summary>
+        /// Approve artwork upload by seller
+        /// </summary>
+        [HttpPost("artworks/{artworkId}/approve")]
+        [JwtAuthorize("Admin")]
+        public async Task<ActionResult> ApproveArtwork(long artworkId, [FromBody] ApproveArtworkDto approveDto)
+        {
+            try
+            {
+                var adminId = HttpContext.GetCurrentAdminId();
+                if (adminId == null)
+                    return Unauthorized(new { Message = "Invalid admin token" });
+                
+                var result = await _adminService.ApproveArtworkAsync(adminId.Value, artworkId, approveDto.AdminNote);
+                
+                if (!result)
+                {
+                    return BadRequest(new { Message = "Failed to approve artwork" });
+                }
+
+                return Ok(new { Message = "Artwork approved successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving artwork");
+                return StatusCode(500, new { Message = "An error occurred while approving artwork" });
+            }
+        }
+
+        /// <summary>
+        /// Reject artwork upload by seller
+        /// </summary>
+        [HttpPost("artworks/{artworkId}/reject")]
+        [JwtAuthorize("Admin")]
+        public async Task<ActionResult> RejectArtwork(long artworkId, [FromBody] RejectArtworkDto rejectDto)
+        {
+            try
+            {
+                var adminId = HttpContext.GetCurrentAdminId();
+                if (adminId == null)
+                    return Unauthorized(new { Message = "Invalid admin token" });
+                
+                var result = await _adminService.RejectArtworkAsync(adminId.Value, artworkId, rejectDto.Reason, rejectDto.AdminNote);
+                
+                if (!result)
+                {
+                    return BadRequest(new { Message = "Failed to reject artwork" });
+                }
+
+                return Ok(new { Message = "Artwork rejected successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting artwork");
+                return StatusCode(500, new { Message = "An error occurred while rejecting artwork" });
+            }
+        }
+
+        /// <summary>
+        /// Get pending artworks for approval
+        /// </summary>
+        [HttpGet("artworks/pending")]
+        [JwtAuthorize("Admin")]
+        public async Task<ActionResult<IEnumerable<AdminArtworkViewDto>>> GetPendingArtworks([FromQuery] int skip = 0, [FromQuery] int take = 50)
+        {
+            try
+            {
+                var artworks = await _adminService.GetPendingArtworksAsync(skip, take);
+                return Ok(artworks);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving pending artworks");
+                return StatusCode(500, new { Message = "An error occurred while retrieving pending artworks" });
+            }
+        }
+
         // ===========================================
         // TRANSACTION MANAGEMENT ENDPOINTS
         // ===========================================

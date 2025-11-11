@@ -165,6 +165,13 @@ namespace Synos.Api.Repositories
                     SellerEmail = a.Seller.Email,
                     PrimaryImageUrl = a.ArtworkImages.FirstOrDefault(img => img.IsPrimary) != null ? 
                         a.ArtworkImages.FirstOrDefault(img => img.IsPrimary)!.FilePath : null,
+                    Images = a.ArtworkImages.Select(img => new ArtworkImageDto
+                    {
+                        Id = img.Id,
+                        ImageUrl = img.FilePath,
+                        IsPrimary = img.IsPrimary,
+                        UploadedAt = img.UploadedAt
+                    }).ToList(),
                     TotalImages = a.ArtworkImages.Count,
                     TotalFavorites = a.Favorites.Count,
                     TotalOrders = a.OrderItems.Count
@@ -206,6 +213,13 @@ namespace Synos.Api.Repositories
                     SellerEmail = a.Seller.Email,
                     PrimaryImageUrl = a.ArtworkImages.FirstOrDefault(img => img.IsPrimary) != null ? 
                         a.ArtworkImages.FirstOrDefault(img => img.IsPrimary)!.FilePath : null,
+                    Images = a.ArtworkImages.Select(img => new ArtworkImageDto
+                    {
+                        Id = img.Id,
+                        ImageUrl = img.FilePath,
+                        IsPrimary = img.IsPrimary,
+                        UploadedAt = img.UploadedAt
+                    }).ToList(),
                     TotalImages = a.ArtworkImages.Count,
                     TotalFavorites = a.Favorites.Count,
                     TotalOrders = a.OrderItems.Count
@@ -511,6 +525,13 @@ namespace Synos.Api.Repositories
                     SellerEmail = a.Seller.Email,
                     PrimaryImageUrl = a.ArtworkImages.FirstOrDefault(img => img.IsPrimary) != null ? 
                         a.ArtworkImages.FirstOrDefault(img => img.IsPrimary)!.FilePath : null,
+                    Images = a.ArtworkImages.Select(img => new ArtworkImageDto
+                    {
+                        Id = img.Id,
+                        ImageUrl = img.FilePath,
+                        IsPrimary = img.IsPrimary,
+                        UploadedAt = img.UploadedAt
+                    }).ToList(),
                     TotalImages = a.ArtworkImages.Count,
                     TotalFavorites = a.Favorites.Count,
                     TotalOrders = a.OrderItems.Count

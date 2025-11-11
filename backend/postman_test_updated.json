@@ -1,0 +1,1070 @@
+{
+	"info": {
+		"_postman_id": "8eee239a-3362-4f19-9e2f-fec174cbb48f",
+		"name": "Synos Backend API - Complete Collection",
+		"description": "Complete API collection for Synos Backend - Art Marketplace System (All Controllers: Admin, Auth, Members, Seller) - Updated with full seller support and multiple image handling",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "45832962"
+	},
+	"item": [
+		{
+			"name": "🔐 Authentication (Auth Controller)",
+			"item": [
+				{
+					"name": "Validate Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"{{member_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/validate",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"validate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.token) {",
+									"        pm.collectionVariables.set('member_token', response.token);",
+									"        console.log('Token refreshed and saved to collection variables');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"{{member_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/refresh",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"refresh"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{member_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/me",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"me"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Revoke Token (Logout)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{member_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/revoke",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"revoke"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check Role",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{member_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/role",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"role"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Admin Only Test",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/admin-only",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"admin-only"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Artist Only Test",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{seller_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/artist-only",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"artist-only"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Artist or Admin Test",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{seller_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/artist-or-admin",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"artist-or-admin"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "👥 Members (Members Controller)",
+			"item": [
+				{
+					"name": "Member Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.token) {",
+									"        pm.collectionVariables.set('member_token', response.token);",
+									"        console.log('Member token saved to collection variables');",
+									"    }",
+									"    if (response.user && response.user.id) {",
+									"        pm.collectionVariables.set('member_id', response.user.id.toString());",
+									"        console.log('Member ID saved to collection variables');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/members/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Member Register",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.id) {",
+									"        pm.collectionVariables.set('member_id', response.id.toString());",
+									"        console.log('New member ID saved to collection variables');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"fullName\": \"John Doe\",\n  \"phoneNumber\": \"+1234567890\",\n  \"address\": \"123 Main St, City, Country\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/members/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Member Profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/members/{{member_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"{{member_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Member Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{member_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fullName\": \"John Smith\",\n  \"phoneNumber\": \"+1234567891\",\n  \"address\": \"456 Oak St, New City, Country\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/members/{{member_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"{{member_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{member_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"currentPassword\": \"SecurePassword123!\",\n  \"newPassword\": \"NewPassword456!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/members/{{member_id}}/change-password",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"{{member_id}}",
+								"change-password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Personal Gallery",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{member_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/members/{{member_id}}/gallery",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"{{member_id}}",
+								"gallery"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Artwork to Gallery",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{member_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/members/{{member_id}}/gallery/{{artwork_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"{{member_id}}",
+								"gallery",
+								"{{artwork_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Artwork from Gallery",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{member_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/members/{{member_id}}/gallery/{{artwork_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"{{member_id}}",
+								"gallery",
+								"{{artwork_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Member Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{member_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/members/logout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Profile (Token-based)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{member_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/members/me",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"me"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🎨 Seller (Seller Controller)",
+			"item": [
+				{
+					"name": "Seller Login (Member with Seller Role)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.token) {",
+									"        pm.collectionVariables.set('seller_token', response.token);",
+									"        console.log('Seller token saved to collection variables');",
+									"    }",
+									"    if (response.user && response.user.id) {",
+									"        pm.collectionVariables.set('seller_id', response.user.id.toString());",
+									"        console.log('Seller ID saved to collection variables');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"seller@example.com\",\n  \"password\": \"SellerPassword123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/members/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"login"
+							]
+						},
+						"description": "Login with a member account that has Seller role"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Artwork with Images",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.id) {",
+									"        pm.collectionVariables.set('artwork_id', response.id.toString());",
+									"        console.log('New artwork ID saved to collection variables');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{seller_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Beautiful Sunset Painting",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "A stunning oil painting of a sunset over mountains",
+									"type": "text"
+								},
+								{
+									"key": "price",
+									"value": "750.50",
+									"type": "text"
+								},
+								{
+									"key": "saleType",
+									"value": "FixedPrice",
+									"type": "text"
+								},
+								{
+									"key": "categoryId",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "creationYear",
+									"value": "2023",
+									"type": "text"
+								},
+								{
+									"key": "dimensions",
+									"value": "24x36 inches",
+									"type": "text"
+								},
+								{
+									"key": "condition",
+									"value": "Excellent",
+									"type": "text"
+								},
+								{
+									"key": "currency",
+									"value": "USD",
+									"type": "text"
+								},
+								{
+									"key": "images",
+									"type": "file",
+									"src": [],
+									"description": "Upload artwork image files here (multiple files supported)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/seller/artworks",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"seller",
+								"artworks"
+							]
+						},
+						"description": "Create a new artwork with multiple image uploads. Make sure to select image files in the 'images' field."
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Artworks",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{seller_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/seller/artworks",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"seller",
+								"artworks"
+							]
+						},
+						"description": "Get all artworks created by the current seller, including all images for each artwork."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Sales History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{seller_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/seller/sales-history",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"seller",
+								"sales-history"
+							]
+						},
+						"description": "Get complete sales history for the current seller, including commission calculations."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "👑 Admin (Admin Controller)",
+			"item": [
+				{
+					"name": "Admin Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.token) {",
+									"        pm.collectionVariables.set('admin_token', response.token);",
+									"        console.log('Admin token saved to collection variables');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@synos.com\",\n  \"password\": \"Admin@123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Dashboard Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/dashboard/stats",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"dashboard",
+								"stats"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Members",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/members?skip=0&take=50",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"members"
+							],
+							"query": [
+								{
+									"key": "skip",
+									"value": "0",
+									"description": "Number of records to skip (pagination)"
+								},
+								{
+									"key": "take",
+									"value": "50",
+									"description": "Number of records to take (pagination)"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Artworks (Admin View)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/artworks?skip=0&take=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"artworks"
+							],
+							"query": [
+								{
+									"key": "skip",
+									"value": "0",
+									"description": "Number of records to skip (pagination)"
+								},
+								{
+									"key": "take",
+									"value": "20",
+									"description": "Number of records to take (pagination)"
+								}
+							]
+						},
+						"description": "Get all artworks with admin details including all images, seller info, and statistics."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Artwork Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/artworks/{{artwork_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"artworks",
+								"{{artwork_id}}"
+							]
+						},
+						"description": "Get detailed information about a specific artwork including all images and admin metadata."
+					},
+					"response": []
+				},
+				{
+					"name": "Approve Artwork",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/artworks/{{artwork_id}}/approve",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"artworks",
+								"{{artwork_id}}",
+								"approve"
+							]
+						},
+						"description": "Approve a pending artwork for public display."
+					},
+					"response": []
+				},
+				{
+					"name": "Reject Artwork",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Image quality does not meet our standards\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/artworks/{{artwork_id}}/reject",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"artworks",
+								"{{artwork_id}}",
+								"reject"
+							]
+						},
+						"description": "Reject a pending artwork with optional reason."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Most Viewed Artworks",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/analytics/most-viewed?count=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"analytics",
+								"most-viewed"
+							],
+							"query": [
+								{
+									"key": "count",
+									"value": "10",
+									"description": "Number of most viewed artworks to return"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📁 Static Files & Images",
+			"item": [
+				{
+					"name": "Get Artwork Image",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/uploads/ArtworkImg/example_image.jpg",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"uploads",
+								"ArtworkImg",
+								"example_image.jpg"
+							]
+						},
+						"description": "Direct access to uploaded artwork images. Replace 'example_image.jpg' with actual image filename from API responses."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080/api",
+			"type": "string"
+		},
+		{
+			"key": "member_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "member_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "artwork_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "exhibition_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "order_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "admin_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "seller_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "seller_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

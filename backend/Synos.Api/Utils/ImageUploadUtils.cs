@@ -7,6 +7,12 @@ namespace Synos.Api.Utils
 
         public static async Task<string> UploadArtworkImageAsync(IFormFile file, string webRootPath)
         {
+            // Validate inputs
+            if (string.IsNullOrEmpty(webRootPath))
+            {
+                throw new ArgumentException("Web root path cannot be null or empty", nameof(webRootPath));
+            }
+
             // Validate file
             ValidateImageFile(file);
 

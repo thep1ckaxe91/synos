@@ -1,1204 +1,1797 @@
 {
-  "info": {
-    "name": "synos_backend",
-    "description": "Complete API collection for Synos Backend - Art Marketplace System (All Controllers: Admin, Auth, Members)",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "version": {
-      "major": 1,
-      "minor": 0,
-      "patch": 0
-    }
-  },
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{admin_token}}",
-        "type": "string"
-      }
-    ]
-  },
-  "variable": [
-    {
-      "key": "base_url",
-      "value": "https://localhost:7001/api",
-      "type": "string"
-    },
-    {
-      "key": "admin_token",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "member_token",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "member_id",
-      "value": "1",
-      "type": "string"
-    },
-    {
-      "key": "artwork_id",
-      "value": "1",
-      "type": "string"
-    },
-    {
-      "key": "exhibition_id",
-      "value": "1",
-      "type": "string"
-    },
-    {
-      "key": "order_id",
-      "value": "1",
-      "type": "string"
-    }
-  ],
-  "item": [
-    {
-      "name": "🔐 Authentication (Auth Controller)",
-      "item": [
-        {
-          "name": "Validate Token",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"token\": \"{{member_token}}\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth/validate",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "validate"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Refresh Token",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/auth/refresh",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "refresh"]
-            }
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const response = pm.response.json();",
-                  "    if (response.token) {",
-                  "        pm.collectionVariables.set('member_token', response.token);",
-                  "        console.log('Member token refreshed: ' + response.token);",
-                  "    }",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        },
-        {
-          "name": "Get Current User",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/auth/me",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "me"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Revoke Token (Logout)",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/auth/revoke",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "revoke"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Check Role",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/auth/check-role/Member",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "check-role", "Member"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Admin Only Test",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/auth/admin-only",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "admin-only"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Artist Only Test",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/auth/artist-only",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "artist-only"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Artist or Admin Test",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/auth/artist-or-admin",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "artist-or-admin"]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "👥 Members (Members Controller)",
-      "item": [
-        {
-          "name": "Member Login",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"member@example.com\",\n  \"password\": \"password123\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/members/login",
-              "host": ["{{base_url}}"],
-              "path": ["members", "login"]
-            }
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const response = pm.response.json();",
-                  "    if (response.success && response.token) {",
-                  "        pm.collectionVariables.set('member_token', response.token);",
-                  "        console.log('Member token saved: ' + response.token);",
-                  "        if (response.member && response.member.id) {",
-                  "            pm.collectionVariables.set('member_id', response.member.id.toString());",
-                  "        }",
-                  "    }",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        },
-        {
-          "name": "Member Register",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"newmember@example.com\",\n  \"password\": \"password123\",\n  \"fullName\": \"New Member\",\n  \"phone\": \"+84901234567\",\n  \"role\": \"Member\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/members/register",
-              "host": ["{{base_url}}"],
-              "path": ["members", "register"]
-            }
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    const response = pm.response.json();",
-                  "    if (response.success && response.token) {",
-                  "        pm.collectionVariables.set('member_token', response.token);",
-                  "        console.log('Member registered and token saved: ' + response.token);",
-                  "        if (response.member && response.member.id) {",
-                  "            pm.collectionVariables.set('member_id', response.member.id.toString());",
-                  "        }",
-                  "    }",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        },
-        {
-          "name": "Get Member Profile",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/members/profile/{{member_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["members", "profile", "{{member_id}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update Member Profile",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"fullName\": \"Updated Member Name\",\n  \"phone\": \"+84987654321\",\n  \"bio\": \"Updated bio information\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/members/profile/{{member_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["members", "profile", "{{member_id}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Change Password",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"currentPassword\": \"password123\",\n  \"newPassword\": \"newpassword123\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/members/change-password/{{member_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["members", "change-password", "{{member_id}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Personal Gallery",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/members/gallery/{{member_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["members", "gallery", "{{member_id}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Add Artwork to Gallery",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"artworkId\": {{artwork_id}},\n  \"note\": \"Added to personal favorites\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/members/gallery/{{member_id}}/add",
-              "host": ["{{base_url}}"],
-              "path": ["members", "gallery", "{{member_id}}", "add"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Remove Artwork from Gallery",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/members/gallery/{{member_id}}/remove/{{artwork_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["members", "gallery", "{{member_id}}", "remove", "{{artwork_id}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Member Logout",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/members/logout/{{member_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["members", "logout", "{{member_id}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get My Profile (Token-based)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/members/me",
-              "host": ["{{base_url}}"],
-              "path": ["members", "me"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update My Profile (Token-based)",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"fullName\": \"My Updated Name\",\n  \"phone\": \"+84123456789\",\n  \"bio\": \"My updated bio\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/members/me",
-              "host": ["{{base_url}}"],
-              "path": ["members", "me"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get My Gallery (Token-based)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/members/me/gallery",
-              "host": ["{{base_url}}"],
-              "path": ["members", "me", "gallery"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Member Health Check",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/members/health",
-              "host": ["{{base_url}}"],
-              "path": ["members", "health"]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "🛡️ Admin Authentication",
-      "item": [
-        {
-          "name": "Admin Login",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@synos.com\",\n  \"password\": \"admin123\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/admin/login",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "login"]
-            }
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const response = pm.response.json();",
-                  "    if (response.success && response.token) {",
-                  "        pm.collectionVariables.set('admin_token', response.token);",
-                  "        console.log('Admin token saved: ' + response.token);",
-                  "    }",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        },
-        {
-          "name": "Get Admin Profile",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin/profile",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "profile"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update Admin Profile",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"fullName\": \"Admin User Updated\",\n  \"phone\": \"+84901234567\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/admin/profile",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "profile"]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "👥 Admin Member Management",
-      "item": [
-        {
-          "name": "Get Members (Paginated)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin/members?page=1&pageSize=10",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "members"],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "pageSize",
-                  "value": "10"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get All Members (Non-Paginated)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin/members/all",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "members", "all"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Member Details",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin/members/{{member_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "members", "{{member_id}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Approve Member Registration",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"adminNote\": \"Member approved after verification\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/admin/members/{{member_id}}/approve",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "members", "{{member_id}}", "approve"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Reject Member Registration",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"reason\": \"Incomplete documentation provided\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/admin/members/{{member_id}}/reject",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "members", "{{member_id}}", "reject"]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "🎨 Admin Artwork Management",
-      "item": [
-        {
-          "name": "Get Artworks (Paginated)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin/artworks?page=1&pageSize=10",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "artworks"],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "pageSize",
-                  "value": "10"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get All Artworks (Non-Paginated)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin/artworks/all",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "artworks", "all"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Artwork Details",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin/artworks/{{artwork_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "artworks", "{{artwork_id}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update Artwork",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Updated Artwork Title\",\n  \"description\": \"Updated artwork description\",\n  \"basePrice\": 1500.00,\n  \"currency\": \"USD\",\n  \"status\": \"Available\",\n  \"adminNote\": \"Artwork updated by admin\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/admin/artworks/{{artwork_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "artworks", "{{artwork_id}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update Artwork Status",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"status\": \"Available\",\n  \"adminNote\": \"Artwork status updated after review\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/admin/artworks/{{artwork_id}}/status",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "artworks", "{{artwork_id}}", "status"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Artwork",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"reason\": \"Artwork violates platform guidelines\",\n  \"permanentDelete\": false\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/admin/artworks/{{artwork_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "artworks", "{{artwork_id}}"]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "🖼️ Admin Exhibition Management",
-      "item": [
-        {
-          "name": "Get Exhibitions (Paginated)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin/exhibitions?page=1&pageSize=10",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "exhibitions"],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "pageSize",
-                  "value": "10"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get All Exhibitions (Non-Paginated)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin/exhibitions/all",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "exhibitions", "all"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Exhibition Details",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin/exhibitions/{{exhibition_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "exhibitions", "{{exhibition_id}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create Exhibition",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Contemporary Art Exhibition 2025\",\n  \"description\": \"A showcase of modern Vietnamese contemporary art\",\n  \"location\": \"Hanoi Art Gallery, Vietnam\",\n  \"startDate\": \"2025-12-01T09:00:00Z\",\n  \"endDate\": \"2025-12-31T18:00:00Z\",\n  \"featuredArtworkIds\": [1, 2, 3]\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/admin/exhibitions",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "exhibitions"]
-            }
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    const response = pm.response.json();",
-                  "    if (response.id) {",
-                  "        pm.collectionVariables.set('exhibition_id', response.id.toString());",
-                  "        console.log('Exhibition ID saved: ' + response.id);",
-                  "    }",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        },
-        {
-          "name": "Update Exhibition",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Updated Contemporary Art Exhibition 2025\",\n  \"description\": \"Updated description for the exhibition\",\n  \"location\": \"Updated Location - Ho Chi Minh City Art Center\",\n  \"startDate\": \"2025-12-05T09:00:00Z\",\n  \"endDate\": \"2026-01-05T18:00:00Z\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/admin/exhibitions/{{exhibition_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "exhibitions", "{{exhibition_id}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Exhibition",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"reason\": \"Exhibition cancelled due to venue issues\",\n  \"removeArtworks\": false\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/admin/exhibitions/{{exhibition_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "exhibitions", "{{exhibition_id}}"]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "💰 Admin Transaction Management",
-      "item": [
-        {
-          "name": "Get Transactions (Paginated)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin/transactions?page=1&pageSize=10",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "transactions"],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "pageSize",
-                  "value": "10"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get All Transactions (Non-Paginated)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin/transactions/all",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "transactions", "all"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Transaction Details",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin/transactions/{{order_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "transactions", "{{order_id}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Transactions by Date Range",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin/transactions/date-range?startDate=2025-01-01&endDate=2025-12-31&page=1&pageSize=20",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "transactions", "date-range"],
-              "query": [
-                {
-                  "key": "startDate",
-                  "value": "2025-01-01"
-                },
-                {
-                  "key": "endDate",
-                  "value": "2025-12-31"
-                },
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "pageSize",
-                  "value": "20"
-                }
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "🛒 Admin Purchase Request Management",
-      "item": [
-        {
-          "name": "Get Pending Purchase Requests (Paginated)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin/purchase-requests?page=1&pageSize=10",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "purchase-requests"],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "pageSize",
-                  "value": "10"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get All Pending Purchase Requests (Non-Paginated)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin/purchase-requests/all",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "purchase-requests", "all"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Approve Purchase Request",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"adminNote\": \"Purchase approved after payment verification\",\n  \"deliveryDate\": \"2025-11-15T00:00:00Z\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/admin/purchase-requests/{{order_id}}/approve",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "purchase-requests", "{{order_id}}", "approve"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Reject Purchase Request",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"reason\": \"Payment could not be verified\",\n  \"adminNote\": \"Customer needs to provide valid payment proof\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/admin/purchase-requests/{{order_id}}/reject",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "purchase-requests", "{{order_id}}", "reject"]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "📊 Admin Dashboard & Analytics",
-      "item": [
-        {
-          "name": "Get Admin Dashboard",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin/dashboard",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "dashboard"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Recent Activities",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin/dashboard/activities?count=20",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "dashboard", "activities"],
-              "query": [
-                {
-                  "key": "count",
-                  "value": "20"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Most Popular Artworks",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin/analytics/popular-artworks?count=10",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "analytics", "popular-artworks"],
-              "query": [
-                {
-                  "key": "count",
-                  "value": "10"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Most Popular Categories",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/admin/analytics/popular-categories?count=10",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "analytics", "popular-categories"],
-              "query": [
-                {
-                  "key": "count",
-                  "value": "10"
-                }
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    }
-  ],
-  "event": [
-    {
-      "listen": "prerequest",
-      "script": {
-        "type": "text/javascript",
-        "exec": [
-          "// Auto-set authorization header based on endpoint",
-          "const requestPath = pm.request.url.path.join('/');",
-          "let token = '';",
-          "",
-          "// Use admin token for admin endpoints",
-          "if (requestPath.includes('admin')) {",
-          "    token = pm.collectionVariables.get('admin_token');",
-          "} else {",
-          "    // Use member token for member and auth endpoints",
-          "    token = pm.collectionVariables.get('member_token');",
-          "}",
-          "",
-          "// If no specific token, try admin token as fallback",
-          "if (!token || token.length === 0) {",
-          "    token = pm.collectionVariables.get('admin_token');",
-          "}",
-          "",
-          "// Add authorization header if token exists",
-          "if (token && token.length > 0) {",
-          "    pm.request.headers.add({",
-          "        key: 'Authorization',",
-          "        value: 'Bearer ' + token",
-          "    });",
-          "    console.log('Using token for ' + requestPath + ': ' + token.substring(0, 20) + '...');",
-          "}"
-        ]
-      }
-    },
-    {
-      "listen": "test",
-      "script": {
-        "type": "text/javascript",
-        "exec": [
-          "// Global test to log response info",
-          "console.log('Response Status: ' + pm.response.code);",
-          "console.log('Response Time: ' + pm.response.responseTime + 'ms');",
-          "",
-          "// Test for successful responses",
-          "if (pm.response.code >= 200 && pm.response.code < 300) {",
-          "    pm.test('Status code is successful', function () {",
-          "        pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
-          "    });",
-          "}",
-          "",
-          "// Test for error responses",
-          "if (pm.response.code >= 400) {",
-          "    pm.test('Error response has message', function () {",
-          "        const responseJson = pm.response.json();",
-          "        pm.expect(responseJson).to.have.property('message');",
-          "    });",
-          "}"
-        ]
-      }
-    }
-  ]
+	"info": {
+		"_postman_id": "8eee239a-3362-4f19-9e2f-fec174cbb48f",
+		"name": "Synos Backend API - Complete Collection",
+		"description": "Complete API collection for Synos Backend - Art Marketplace System (All Controllers: Admin, Auth, Members, Seller) - Updated with full seller support and multiple image handling",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "45832962"
+	},
+	"item": [
+		{
+			"name": "🔐 Authentication (Auth Controller)",
+			"item": [
+				{
+					"name": "Validate Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"{{member_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/validate",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"validate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.token) {",
+									"        pm.collectionVariables.set('member_token', response.token);",
+									"        console.log('Member token refreshed: ' + response.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/refresh",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"refresh"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/me",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"me"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Revoke Token (Logout)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/revoke",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"revoke"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check Role",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/check-role/Member",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"check-role",
+								"Member"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Admin Only Test",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/admin-only",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"admin-only"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Artist Only Test",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/artist-only",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"artist-only"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Artist or Admin Test",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/artist-or-admin",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"artist-or-admin"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "👥 Members (Members Controller)",
+			"item": [
+				{
+					"name": "Member Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.token) {",
+									"        pm.collectionVariables.set('member_token', response.token);",
+									"        console.log('Member token saved: ' + response.token);",
+									"        if (response.member && response.member.id) {",
+									"            pm.collectionVariables.set('member_id', response.member.id.toString());",
+									"        }",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"seller@synos.com\",\n  \"password\": \"seller123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/members/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Member Register",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.token) {",
+									"        pm.collectionVariables.set('member_token', response.token);",
+									"        console.log('Member registered and token saved: ' + response.token);",
+									"        if (response.member && response.member.id) {",
+									"            pm.collectionVariables.set('member_id', response.member.id.toString());",
+									"        }",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"newaaamember@example.com\",\n  \"password\": \"password123\",\n  \"fullName\": \"New Member\",\n  \"phone\": \"+84901234567\",\n  \"role\": \"buyer\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/members/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Member Profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/members/profile/{{member_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"profile",
+								"{{member_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Member Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fullName\": \"Updated Member Name\",\n  \"phone\": \"+84987654321\",\n  \"bio\": \"Updated bio information\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/members/profile/{{member_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"profile",
+								"{{member_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"currentPassword\": \"seller123\",\n  \"newPassword\": \"newseller123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/members/change-password/{{member_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"change-password",
+								"{{member_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Personal Gallery",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/members/gallery/{{member_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"gallery",
+								"{{member_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Artwork to Gallery",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"artworkId\": {{artwork_id}},\n  \"note\": \"Added to personal favorites\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/members/gallery/{{member_id}}/add",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"gallery",
+								"{{member_id}}",
+								"add"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Artwork from Gallery",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/members/gallery/{{member_id}}/remove/{{artwork_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"gallery",
+								"{{member_id}}",
+								"remove",
+								"{{artwork_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Member Logout",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/members/logout/{{member_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"logout",
+								"{{member_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Profile (Token-based)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/members/me",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"me"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update My Profile (Token-based)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fullName\": \"My Updated Name\",\n  \"phone\": \"+84123456789\",\n  \"bio\": \"My updated bio\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/members/me",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"me"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Gallery (Token-based)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/members/me/gallery",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"me",
+								"gallery"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Member Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/members/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"health"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{member_token}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "🛡️ Admin Authentication",
+			"item": [
+				{
+					"name": "Admin Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.token) {",
+									"        pm.collectionVariables.set('admin_token', response.token);",
+									"        console.log('Admin token saved: ' + response.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@synos.com\",\n  \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Admin Profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Admin Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fullName\": \"Admin User Updated\",\n  \"phone\": \"+84901234567\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "👥 Admin Member Management",
+			"item": [
+				{
+					"name": "Get Members (Paginated)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/members?page=1&pageSize=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"members"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Members (Non-Paginated)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/members/all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"members",
+								"all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Member Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/members/{{member_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"members",
+								"{{member_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Approve Member Registration",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"adminNote\": \"Member approved after verification\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/members/{{member_id}}/approve",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"members",
+								"{{member_id}}",
+								"approve"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reject Member Registration",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Incomplete documentation provided\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/members/{{member_id}}/reject",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"members",
+								"{{member_id}}",
+								"reject"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🎨 Admin Artwork Management",
+			"item": [
+				{
+					"name": "Get Artworks (Paginated)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/artworks?page=1&pageSize=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"artworks"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Artworks (Non-Paginated)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/artworks/all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"artworks",
+								"all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Artwork Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/artworks/{{artwork_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"artworks",
+								"{{artwork_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Artwork",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Artwork Title\",\n  \"description\": \"Updated artwork description\", \n  \"basePrice\": 1500.00,\n  \"currency\": \"USD\",\n  \"status\": 1,\n  \"adminNote\": \"Artwork updated by admin\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/artworks/{{artwork_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"artworks",
+								"{{artwork_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Artwork Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/artworks/{{artwork_id}}/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"artworks",
+								"{{artwork_id}}",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Artwork",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Artwork violates platform guidelines\",\n  \"permanentDelete\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/artworks/{{artwork_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"artworks",
+								"{{artwork_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🖼️ Admin Exhibition Management",
+			"item": [
+				{
+					"name": "Get Exhibitions (Paginated)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/exhibitions?page=1&pageSize=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"exhibitions"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Exhibitions (Non-Paginated)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/exhibitions/all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"exhibitions",
+								"all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Exhibition Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/exhibitions/{{exhibition_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"exhibitions",
+								"{{exhibition_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Exhibition",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.id) {",
+									"        pm.collectionVariables.set('exhibition_id', response.id.toString());",
+									"        console.log('Exhibition ID saved: ' + response.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Contemporary Art Exhibition 2025\",\n  \"description\": \"A showcase of modern Vietnamese contemporary art\",\n  \"location\": \"Hanoi Art Gallery, Vietnam\",\n  \"startDate\": \"2025-12-01T09:00:00Z\",\n  \"endDate\": \"2025-12-31T18:00:00Z\",\n  \"featuredArtworkIds\": [1, 2, 3]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/exhibitions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"exhibitions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Exhibition",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Contemporary Art Exhibition 2025\",\n  \"description\": \"Updated description for the exhibition\",\n  \"location\": \"Updated Location - Ho Chi Minh City Art Center\",\n  \"startDate\": \"2025-12-05T09:00:00Z\",\n  \"endDate\": \"2026-01-05T18:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/exhibitions/{{exhibition_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"exhibitions",
+								"{{exhibition_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Exhibition",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Exhibition cancelled due to venue issues\",\n  \"removeArtworks\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/exhibitions/{{exhibition_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"exhibitions",
+								"{{exhibition_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "💰 Admin Transaction Management",
+			"item": [
+				{
+					"name": "Get Transactions (Paginated)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/transactions?page=1&pageSize=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Transactions (Non-Paginated)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/transactions/all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"transactions",
+								"all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Transaction Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/transactions/{{order_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"transactions",
+								"{{order_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Transactions by Date Range",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/transactions/date-range?startDate=2025-01-01&endDate=2025-12-31&page=1&pageSize=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"transactions",
+								"date-range"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2025-01-01"
+								},
+								{
+									"key": "endDate",
+									"value": "2025-12-31"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "20"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🛒 Admin Purchase Request Management",
+			"item": [
+				{
+					"name": "Get Pending Purchase Requests (Paginated)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/purchase-requests?page=1&pageSize=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"purchase-requests"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Pending Purchase Requests (Non-Paginated)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/purchase-requests/all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"purchase-requests",
+								"all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Approve Purchase Request",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"adminNote\": \"Purchase approved after payment verification\",\n  \"deliveryDate\": \"2025-11-15T00:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/purchase-requests/{{order_id}}/approve",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"purchase-requests",
+								"{{order_id}}",
+								"approve"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reject Purchase Request",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Payment could not be verified\",\n  \"adminNote\": \"Customer needs to provide valid payment proof\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/purchase-requests/{{order_id}}/reject",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"purchase-requests",
+								"{{order_id}}",
+								"reject"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📊 Admin Dashboard & Analytics",
+			"item": [
+				{
+					"name": "Get Admin Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/dashboard",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"dashboard"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Recent Activities",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/dashboard/activities?count=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"dashboard",
+								"activities"
+							],
+							"query": [
+								{
+									"key": "count",
+									"value": "20"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Most Popular Artworks",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/analytics/popular-artworks?count=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"analytics",
+								"popular-artworks"
+							],
+							"query": [
+								{
+									"key": "count",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Most Popular Categories",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/analytics/popular-categories?count=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"analytics",
+								"popular-categories"
+							],
+							"query": [
+								{
+									"key": "count",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{admin_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"requests": {},
+				"exec": [
+					"// Auto-set authorization header based on endpoint",
+					"const requestPath = pm.request.url.path.join('/');",
+					"let token = '';",
+					"",
+					"// Use admin token for admin endpoints",
+					"if (requestPath.includes('admin')) {",
+					"    token = pm.collectionVariables.get('admin_token');",
+					"} else {",
+					"    // Use member token for member and auth endpoints",
+					"    token = pm.collectionVariables.get('member_token');",
+					"}",
+					"",
+					"// If no specific token, try admin token as fallback",
+					"if (!token || token.length === 0) {",
+					"    token = pm.collectionVariables.get('admin_token');",
+					"}",
+					"",
+					"// Add authorization header if token exists",
+					"if (token && token.length > 0) {",
+					"    pm.request.headers.add({",
+					"        key: 'Authorization',",
+					"        value: 'Bearer ' + token",
+					"    });",
+					"    console.log('Using token for ' + requestPath + ': ' + token.substring(0, 20) + '...');",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"requests": {},
+				"exec": [
+					"// Global test to log response info",
+					"console.log('Response Status: ' + pm.response.code);",
+					"console.log('Response Time: ' + pm.response.responseTime + 'ms');",
+					"",
+					"// Test for successful responses",
+					"if (pm.response.code >= 200 && pm.response.code < 300) {",
+					"    pm.test('Status code is successful', function () {",
+					"        pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+					"    });",
+					"}",
+					"",
+					"// Test for error responses",
+					"if (pm.response.code >= 400) {",
+					"    pm.test('Error response has message', function () {",
+					"        const responseJson = pm.response.json();",
+					"        pm.expect(responseJson).to.have.property('message');",
+					"    });",
+					"}"
+				]
+			}
+		},
+		{
+			"name": "🎨 Seller Features (Seller Controller)",
+			"item": [
+				{
+					"name": "Seller Register",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.token) {",
+									"        pm.collectionVariables.set('seller_token', response.token);",
+									"        console.log('Seller token saved: ' + response.token);",
+									"        if (response.member && response.member.id) {",
+									"            pm.collectionVariables.set('seller_id', response.member.id.toString());",
+									"            console.log('Seller ID saved: ' + response.member.id);",
+									"        }",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"seller@synos.com\",\n  \"password\": \"seller123\",\n  \"fullName\": \"Seller Name\",\n  \"phone\": \"+1234567890\",\n  \"role\": \"Seller\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/members/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Seller Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.token) {",
+									"        pm.collectionVariables.set('seller_token', response.token);",
+									"        console.log('Seller token saved: ' + response.token);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"seller@synos.com\",\n  \"password\": \"seller123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/members/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Artwork (Form Data)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.id) {",
+									"        pm.collectionVariables.set('artwork_id', response.id.toString());",
+									"        console.log('Artwork ID saved: ' + response.id);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{seller_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "My First Artwork",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "A beautiful piece of art.",
+									"type": "text"
+								},
+								{
+									"key": "price",
+									"value": "1500.00",
+									"type": "text"
+								},
+								{
+									"key": "saleType",
+									"value": "FixedPrice",
+									"type": "text"
+								},
+								{
+									"key": "categoryId",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "creationYear",
+									"value": "2024",
+									"type": "text"
+								},
+								{
+									"key": "dimensions",
+									"value": "24x36 inches",
+									"type": "text"
+								},
+								{
+									"key": "condition",
+									"value": "Excellent",
+									"type": "text"
+								},
+								{
+									"key": "currency",
+									"value": "USD",
+									"type": "text"
+								},
+								{
+									"key": "images",
+									"description": "Upload artwork images (multiple files supported)",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/seller/artworks",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"seller",
+								"artworks"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Artworks",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{seller_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/seller/artworks",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"seller",
+								"artworks"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Sales History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{seller_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/seller/sales-history",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"seller",
+								"sales-history"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080/api"
+		},
+		{
+			"key": "member_token",
+			"value": ""
+		},
+		{
+			"key": "member_id",
+			"value": "1"
+		},
+		{
+			"key": "artwork_id",
+			"value": "1"
+		},
+		{
+			"key": "exhibition_id",
+			"value": "1"
+		},
+		{
+			"key": "order_id",
+			"value": "1"
+		},
+		{
+			"key": "admin_token",
+			"value": ""
+		},
+		{
+			"key": "seller_token",
+			"value": ""
+		},
+		{
+			"key": "seller_id",
+			"value": ""
+		}
+	]
 }

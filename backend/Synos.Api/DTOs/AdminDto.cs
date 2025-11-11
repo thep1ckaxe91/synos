@@ -125,9 +125,18 @@ namespace Synos.Api.DTOs
         public string SellerName { get; set; } = string.Empty;
         public string SellerEmail { get; set; } = string.Empty;
         public string? PrimaryImageUrl { get; set; }
+        public List<ArtworkImageDto> Images { get; set; } = new List<ArtworkImageDto>();
         public int TotalImages { get; set; }
         public int TotalFavorites { get; set; }
         public int TotalOrders { get; set; }
+    }
+
+    public class ArtworkImageDto
+    {
+        public long Id { get; set; }
+        public string ImageUrl { get; set; } = string.Empty;
+        public bool IsPrimary { get; set; }
+        public DateTime UploadedAt { get; set; }
     }
 
     public class UpdateArtworkDto
@@ -413,6 +422,18 @@ namespace Synos.Api.DTOs
     }
 
     public class RejectPurchaseDto
+    {
+        public string Reason { get; set; } = string.Empty;
+        public string? AdminNote { get; set; }
+    }
+
+    // === ARTWORK APPROVAL DTOs ===
+    public class ApproveArtworkDto
+    {
+        public string? AdminNote { get; set; }
+    }
+
+    public class RejectArtworkDto
     {
         public string Reason { get; set; } = string.Empty;
         public string? AdminNote { get; set; }

@@ -4,6 +4,7 @@ using Synos.Api.Repositories;
 using Synos.Api.Utils;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Http;
 
 namespace Synos.Api.Services
 {
@@ -25,6 +26,9 @@ namespace Synos.Api.Services
         Task<AdminArtworkViewDto?> GetArtworkDetailsForAdminAsync(long artworkId);
         Task<bool> UpdateArtworkStatusAsync(long adminId, long artworkId, ArtworkStatus status);
         Task<bool> DeleteArtworkAsync(long adminId, long artworkId);
+        Task<bool> ApproveArtworkAsync(long adminId, long artworkId, string? adminNote);
+        Task<bool> RejectArtworkAsync(long adminId, long artworkId, string reason, string? adminNote);
+        Task<IEnumerable<AdminArtworkViewDto>> GetPendingArtworksAsync(int skip = 0, int take = 50);
         
         // Transaction Management
         Task<IEnumerable<TransactionMonitorDto>> GetTransactionsForAdminAsync(int skip = 0, int take = 50);
@@ -70,6 +74,7 @@ namespace Synos.Api.Services
         private readonly IOrderRepository _orderRepository;
         private readonly IExhibitionRepository _exhibitionRepository;
         private readonly IJwtService _jwtService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public AdminService(
             IAdminRepository adminRepository,
@@ -77,7 +82,8 @@ namespace Synos.Api.Services
             IArtworkRepository artworkRepository,
             IOrderRepository orderRepository,
             IExhibitionRepository exhibitionRepository,
-            IJwtService jwtService)
+            IJwtService jwtService,
+            IHttpContextAccessor httpContextAccessor)
         {
             _adminRepository = adminRepository;
             _memberRepository = memberRepository;
@@ -85,6 +91,63 @@ namespace Synos.Api.Services
             _orderRepository = orderRepository;
             _exhibitionRepository = exhibitionRepository;
             _jwtService = jwtService;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        // ===========================================
+        // HELPER METHODS
+        // ===========================================
+
+        private string GetBaseUrl()
+        {
+            var request = _httpContextAccessor.HttpContext?.Request;
+            if (request == null)
+                return "http://localhost:8080"; // Fallback for Docker environment
+
+            return $"{request.Scheme}://{request.Host}";
+        }
+
+        private AdminArtworkViewDto ProcessArtworkImages(AdminArtworkViewDto artwork)
+        {
+            var baseUrl = GetBaseUrl();
+            
+            // Convert primary image file path to full URL
+            if (!string.IsNullOrEmpty(artwork.PrimaryImageUrl))
+            {
+                var normalizedPath = artwork.PrimaryImageUrl.Replace("\\", "/");
+                if (normalizedPath.StartsWith("uploads/"))
+                {
+                    artwork.PrimaryImageUrl = $"{baseUrl}/{normalizedPath}";
+                }
+                else
+                {
+                    artwork.PrimaryImageUrl = $"{baseUrl}/uploads/{normalizedPath}";
+                }
+            }
+
+            // Convert all image file paths to full URLs
+            foreach (var image in artwork.Images)
+            {
+                if (!string.IsNullOrEmpty(image.ImageUrl))
+                {
+                    var normalizedPath = image.ImageUrl.Replace("\\", "/");
+                    if (normalizedPath.StartsWith("uploads/"))
+                    {
+                        image.ImageUrl = $"{baseUrl}/{normalizedPath}";
+                    }
+                    else
+                    {
+                        image.ImageUrl = $"{baseUrl}/uploads/{normalizedPath}";
+                    }
+                }
+            }
+
+            return artwork;
+        }
+
+        private IEnumerable<AdminArtworkViewDto> ProcessArtworkImagesList(IEnumerable<AdminArtworkViewDto> artworks)
+        {
+            return artworks.Select(ProcessArtworkImages);
         }
 
         // ===========================================
@@ -289,12 +352,14 @@ namespace Synos.Api.Services
 
         public async Task<IEnumerable<AdminArtworkViewDto>> GetArtworksForAdminAsync(int skip = 0, int take = 50)
         {
-            return await _adminRepository.GetArtworksForAdminAsync(skip, take);
+            var artworks = await _adminRepository.GetArtworksForAdminAsync(skip, take);
+            return ProcessArtworkImagesList(artworks);
         }
 
         public async Task<AdminArtworkViewDto?> GetArtworkDetailsForAdminAsync(long artworkId)
         {
-            return await _adminRepository.GetArtworkDetailsForAdminAsync(artworkId);
+            var artwork = await _adminRepository.GetArtworkDetailsForAdminAsync(artworkId);
+            return artwork != null ? ProcessArtworkImages(artwork) : null;
         }
 
         public async Task<bool> UpdateArtworkStatusAsync(long adminId, long artworkId, ArtworkStatus status)
@@ -333,6 +398,105 @@ namespace Synos.Api.Services
             catch (Exception)
             {
                 return false;
+            }
+        }
+
+        public async Task<bool> ApproveArtworkAsync(long adminId, long artworkId, string? adminNote)
+        {
+            try
+            {
+                // Get the artwork first to verify it exists and is pending
+                var artwork = await _artworkRepository.GetArtworkByIdAsync(artworkId);
+                if (artwork == null || artwork.Status != ArtworkStatus.Pending)
+                {
+                    return false;
+                }
+
+                // Update the status to Available and set timestamp
+                artwork.Status = ArtworkStatus.Available;
+                artwork.UpdatedAt = TimeUtils.GetCurrentTime();
+
+                // Save the changes
+                var updatedArtwork = await _artworkRepository.UpdateArtworkAsync(artworkId, artwork);
+                return updatedArtwork != null;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> RejectArtworkAsync(long adminId, long artworkId, string reason, string? adminNote)
+        {
+            try
+            {
+                // Get the artwork first to verify it exists and is pending
+                var artwork = await _artworkRepository.GetArtworkByIdAsync(artworkId);
+                if (artwork == null || artwork.Status != ArtworkStatus.Pending)
+                {
+                    return false;
+                }
+
+                // Soft delete the artwork (reject by setting DeletedAt)
+                artwork.DeletedAt = TimeUtils.GetCurrentTime();
+                artwork.UpdatedAt = TimeUtils.GetCurrentTime();
+
+                // Save the changes
+                var updatedArtwork = await _artworkRepository.UpdateArtworkAsync(artworkId, artwork);
+                return updatedArtwork != null;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public async Task<IEnumerable<AdminArtworkViewDto>> GetPendingArtworksAsync(int skip = 0, int take = 50)
+        {
+            try
+            {
+                // Get artworks with Pending status
+                var pendingArtworks = await _artworkRepository.GetArtworksByStatusAsync(ArtworkStatus.Pending);
+                
+                // Apply pagination
+                var paginatedArtworks = pendingArtworks.Skip(skip).Take(take);
+                
+                // Convert to AdminArtworkViewDto
+                var result = new List<AdminArtworkViewDto>();
+                foreach (var artwork in paginatedArtworks)
+                {
+                    var dto = new AdminArtworkViewDto
+                    {
+                        Id = artwork.Id,
+                        SellerId = artwork.SellerId,
+                        Title = artwork.Title,
+                        Description = artwork.Description,
+                        CategoryId = artwork.CategoryId,
+                        CreationYear = artwork.CreationYear,
+                        Dimensions = artwork.Dimensions,
+                        Condition = artwork.Condition,
+                        IsFor = artwork.IsFor,
+                        FixedPrice = artwork.FixedPrice,
+                        Currency = artwork.Currency,
+                        Status = artwork.Status,
+                        CreatedAt = artwork.CreatedAt,
+                        UpdatedAt = artwork.UpdatedAt,
+                        DeletedAt = artwork.DeletedAt,
+                        // Additional seller info would need to be populated from Member repository
+                        SellerName = "Seller Name", // TODO: Get from member repository
+                        SellerEmail = "seller@example.com", // TODO: Get from member repository
+                        TotalImages = 0, // TODO: Get from artwork images
+                        TotalFavorites = 0, // TODO: Get from favorites
+                        TotalOrders = 0 // TODO: Get from orders
+                    };
+                    result.Add(dto);
+                }
+                
+                return result;
+            }
+            catch (Exception)
+            {
+                return new List<AdminArtworkViewDto>();
             }
         }
 
@@ -385,7 +549,8 @@ namespace Synos.Api.Services
 
         public async Task<IEnumerable<AdminArtworkViewDto>> GetMostViewedArtworksAsync(int count = 10)
         {
-            return await _adminRepository.GetMostViewedArtworksAsync(count);
+            var artworks = await _adminRepository.GetMostViewedArtworksAsync(count);
+            return ProcessArtworkImagesList(artworks);
         }
 
         public async Task<IEnumerable<CategoryDto>> GetMostPopularCategoriesAsync(int count = 10)
@@ -404,7 +569,8 @@ namespace Synos.Api.Services
 
         public async Task<IEnumerable<AdminArtworkViewDto>> GetAllArtworksAsync()
         {
-            return await _adminRepository.GetArtworksForAdminAsync(0, int.MaxValue);
+            var artworks = await _adminRepository.GetArtworksForAdminAsync(0, int.MaxValue);
+            return ProcessArtworkImagesList(artworks);
         }
 
         public async Task<IEnumerable<AdminOrderViewDto>> GetAllTransactionsAsync()
