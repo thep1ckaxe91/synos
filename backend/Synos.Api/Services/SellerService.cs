@@ -318,6 +318,13 @@ namespace Synos.Api.Services
                 return null; // Artwork not found, not owned by seller, not for auction, or not available
             }
 
+            // Check if artwork already has an active auction
+            var existingAuction = await _auctionRepository.GetAuctionByArtworkIdAsync(createAuctionDto.ArtworkId);
+            if (existingAuction != null && existingAuction.Status != AuctionStatus.Ended)
+            {
+                return null; // Artwork already has an active auction
+            }
+
             if (createAuctionDto.StartTime >= createAuctionDto.EndTime || createAuctionDto.StartTime < TimeUtils.GetCurrentTime())
             {
                 return null; // Invalid auction times

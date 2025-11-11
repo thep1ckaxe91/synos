@@ -48,7 +48,9 @@ INSERT INTO artworks (id, seller_id, title, description, category_id, creation_y
 (3, 3, 'Cubist Portrait', 'A modern interpretation of portraiture in the cubist style', 1, 2023, '20x24 inches', 'Excellent', 'Fixed', 800.00, 'USD', 'Available', NOW(), NOW()),
 (4, 5, 'Bronze Figure', 'Contemporary bronze sculpture representing human emotion', 2, 2024, '12x8x6 inches', 'Mint', 'Fixed', 2500.00, 'USD', 'Available', NOW(), NOW()),
 (5, 1, 'Ocean Waves', 'Dynamic seascape capturing the power and beauty of ocean waves', 1, 2023, '36x48 inches', 'Very Good', 'Auction', NULL, 'USD', 'Available', NOW(), NOW()),
-(6, 3, 'Urban Rhythm', 'Modern cityscape with geometric patterns and vibrant colors', 1, 2024, '28x32 inches', 'Excellent', 'Fixed', 950.00, 'USD', 'Available', NOW(), NOW());
+(6, 3, 'Urban Rhythm', 'Modern cityscape with geometric patterns and vibrant colors', 1, 2024, '28x32 inches', 'Excellent', 'Fixed', 950.00, 'USD', 'Available', NOW(), NOW()),
+(7, 1, 'Desert Sunset', 'Vibrant desert landscape with dramatic sunset colors', 1, 2024, '32x24 inches', 'Excellent', 'Auction', NULL, 'USD', 'Available', NOW(), NOW()),
+(8, 3, 'Modern Sculpture', 'Abstract contemporary sculpture in mixed media', 2, 2024, '18x12x10 inches', 'Mint', 'Auction', NULL, 'USD', 'Available', NOW(), NOW());
 
 -- Insert Artwork Images
 INSERT INTO artwork_images (id, artwork_id, file_path, is_primary, uploaded_at) VALUES
@@ -59,7 +61,9 @@ INSERT INTO artwork_images (id, artwork_id, file_path, is_primary, uploaded_at) 
 (5, 4, 'artworks/bronze-figure-main.jpg', TRUE, NOW()),
 (6, 4, 'artworks/bronze-figure-side.jpg', FALSE, NOW()),
 (7, 5, 'artworks/ocean-waves-main.jpg', TRUE, NOW()),
-(8, 6, 'artworks/urban-rhythm-main.jpg', TRUE, NOW());
+(8, 6, 'artworks/urban-rhythm-main.jpg', TRUE, NOW()),
+(9, 7, 'artworks/desert-sunset-main.jpg', TRUE, NOW()),
+(10, 8, 'artworks/modern-sculpture-main.jpg', TRUE, NOW());
 
 -- Insert Exhibitions
 INSERT INTO exhibitions (id, title, description, location, start_date, end_date, created_at) VALUES
@@ -78,8 +82,8 @@ INSERT INTO exhibition_artworks (exhibition_id, artwork_id, display_from, displa
 
 -- Insert Auctions
 INSERT INTO auctions (id, artwork_id, start_time, end_time, starting_price, reserve_price, minimum_increment, status, created_at) VALUES
-(1, 2, '2024-12-01 10:00:00', '2024-12-15 18:00:00', 500.00, 800.00, 50.00, 'Active', NOW()),
-(2, 5, '2024-12-10 14:00:00', '2024-12-20 20:00:00', 750.00, 1000.00, 75.00, 'Active', NOW());
+(1, 2, '2024-12-01 10:00:00', '2024-12-15 18:00:00', 500.00, 800.00, 50.00, 'Running', NOW()),
+(2, 5, '2024-12-10 14:00:00', '2024-12-20 20:00:00', 750.00, 1000.00, 75.00, 'Running', NOW());
 
 -- Insert Favorites
 INSERT INTO favorite (artworks_id, user_id, created_at) VALUES

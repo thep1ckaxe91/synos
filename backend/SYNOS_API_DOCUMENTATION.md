@@ -308,6 +308,80 @@ Remove an artwork from member's personal gallery.
 }
 ```
 
+### Get Favorites
+**GET** `/members/{id}/favorites`
+
+Get member's favorite artworks with detailed information.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+```json
+[
+  {
+    "artworkId": 15,
+    "artworkTitle": "Beautiful Sunset Painting",
+    "artworkDescription": "A stunning oil painting of a sunset over mountains",
+    "fixedPrice": 750.50,
+    "artworkFor": "Fixed",
+    "status": "Available",
+    "primaryImage": "http://localhost:8080/uploads/ArtworkImg/sunset_123.jpg",
+    "sellerName": "Jane Artist",
+    "categoryName": "Paintings",
+    "addedToFavoritesAt": "2025-11-09T09:00:00Z"
+  }
+]
+```
+
+### Add to Favorites
+**POST** `/members/{id}/favorites`
+
+Add an artwork to member's favorites.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:**
+```json
+{
+  "artworkId": 15
+}
+```
+
+**Response (200):**
+```json
+{
+  "message": "Artwork added to favorites successfully"
+}
+```
+
+### Remove from Favorites
+**DELETE** `/members/{id}/favorites/{artworkId}`
+
+Remove an artwork from member's favorites.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+```json
+{
+  "message": "Artwork removed from favorites successfully"
+}
+```
+
+### Check if Favorite
+**GET** `/members/{id}/favorites/{artworkId}/check`
+
+Check if an artwork is in member's favorites.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+```json
+{
+  "isFavorite": true
+}
+```
+
 ### Member Logout
 **POST** `/members/logout`
 
@@ -463,9 +537,262 @@ Get sales history for the current seller.
 ]
 ```
 
+### Create Auction
+**POST** `/seller/auctions`
+
+Create a new auction for an approved artwork.
+
+**Headers:** `Authorization: Bearer <seller_token>`
+
+**Request Body:**
+```json
+{
+  "artworkId": 2,
+  "startingPrice": 500.00,
+  "reservePrice": 800.00,
+  "startTime": "2025-11-12T10:00:00Z",
+  "endTime": "2025-11-19T22:00:00Z"
+}
+```
+
+**Response (201):**
+```json
+{
+  "id": 3,
+  "artworkId": 2,
+  "artworkTitle": "Abstract Dreams",
+  "startTime": "2025-11-12T10:00:00Z",
+  "endTime": "2025-11-19T22:00:00Z",
+  "startingPrice": 500.00,
+  "reservePrice": 800.00,
+  "minimumIncrement": 1.00,
+  "status": "Scheduled",
+  "winnerBidId": null,
+  "createdAt": "2025-11-11T21:33:13Z"
+}
+```
+
 ---
 
-## 👑 Admin Controller (`/api/admin`)
+## � Buyer Controller (`/api/buyer`)
+
+**Note:** All buyer endpoints require Member role authentication (Buyer or Seller).
+
+### Get Purchase History
+**GET** `/buyer/orders`
+
+Get all orders/purchases made by the current user.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+```json
+[
+  {
+    "id": 12,
+    "orderNumber": "ORD-20251111-12",
+    "totalAmount": 750.50,
+    "status": "Paid",
+    "createdAt": "2025-11-11T14:30:00Z",
+    "items": [
+      {
+        "artworkId": 15,
+        "artworkTitle": "Beautiful Sunset Painting",
+        "artworkImage": "http://localhost:8080/uploads/ArtworkImg/sunset_123.jpg",
+        "price": 750.50,
+        "quantity": 1
+      }
+    ]
+  }
+]
+```
+
+### Place Order
+**POST** `/buyer/orders`
+
+Create a new order for purchasing artworks.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:**
+```json
+{
+  "items": [
+    {
+      "artworkId": 15,
+      "quantity": 1
+    }
+  ]
+}
+```
+
+**Response (201):**
+```json
+{
+  "id": 13,
+  "orderNumber": "ORD-20251111-13",
+  "totalAmount": 500.00,
+  "status": "Pending",
+  "paymentDeadline": "2025-11-12T14:30:00Z",
+  "createdAt": "2025-11-11T14:30:00Z",
+  "items": [
+    {
+      "artworkId": 20,
+      "artworkTitle": "Modern Art Piece",
+      "artworkImage": "http://localhost:8080/uploads/ArtworkImg/modern_456.jpg",
+      "price": 500.00,
+      "quantity": 1
+    }
+  ]
+}
+```
+
+### Initiate Payment
+**POST** `/buyer/orders/{orderId}/pay`
+
+Initiate VNPay payment for an existing order.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+```json
+{
+  "paymentUrl": "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?vnp_Amount=50000000&vnp_Command=pay..."
+}
+```
+
+**Response (404):**
+```json
+{
+  "message": "Order not found, you do not have permission, or the order cannot be paid for."
+}
+```
+
+### VNPay Payment Return
+**GET** `/buyer/payment/vnpay-return`
+
+Handle VNPay payment return callback (redirects to frontend).
+
+**Query Parameters:**
+- `vnp_Amount`: Payment amount
+- `vnp_TxnRef`: Transaction reference
+- `vnp_ResponseCode`: Response code from VNPay
+- Other VNPay parameters...
+
+**Response:** Redirects to frontend with payment result
+
+### VNPay Payment IPN
+**POST** `/buyer/payment/vnpay-ipn`
+
+Handle VNPay Instant Payment Notification webhook.
+
+**Request:** VNPay IPN data
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Payment processed successfully"
+}
+```
+
+### Get Active Auctions
+**GET** `/buyer/auctions`
+
+Get all currently active auctions.
+
+**Response (200):**
+```json
+[
+  {
+    "id": 3,
+    "artworkId": 2,
+    "artworkTitle": "Abstract Dreams",
+    "artworkImage": "http://localhost:8080/uploads/ArtworkImg/abstract_123.jpg",
+    "startTime": "2025-11-12T10:00:00Z",
+    "endTime": "2025-11-19T22:00:00Z",
+    "startingPrice": 500.00,
+    "currentHighestBid": 650.00,
+    "totalBids": 5,
+    "status": "Active",
+    "timeRemaining": "7d 15h 30m"
+  }
+]
+```
+
+### Get Auction Details
+**GET** `/buyer/auctions/{id}`
+
+Get detailed information about a specific auction including bid history.
+
+**Response (200):**
+```json
+{
+  "id": 3,
+  "artworkId": 2,
+  "artworkTitle": "Abstract Dreams",
+  "artworkDescription": "An abstract expressionist piece exploring the subconscious mind",
+  "artworkImages": [
+    {
+      "imageUrl": "http://localhost:8080/uploads/ArtworkImg/abstract_123.jpg",
+      "isPrimary": true
+    }
+  ],
+  "startTime": "2025-11-12T10:00:00Z",
+  "endTime": "2025-11-19T22:00:00Z",
+  "startingPrice": 500.00,
+  "reservePrice": 800.00,
+  "currentHighestBid": 650.00,
+  "minimumIncrement": 25.00,
+  "totalBids": 5,
+  "status": "Active",
+  "sellerName": "Vincent Artist",
+  "bidHistory": [
+    {
+      "bidAmount": 650.00,
+      "bidTime": "2025-11-11T16:00:00Z",
+      "bidderName": "Anonymous"
+    },
+    {
+      "bidAmount": 625.00,
+      "bidTime": "2025-11-11T15:30:00Z",
+      "bidderName": "Anonymous"
+    }
+  ]
+}
+```
+
+### Place Bid
+**POST** `/buyer/auctions/{id}/bids`
+
+Place a bid on an active auction.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:**
+```json
+{
+  "amount": 700.00
+}
+```
+
+**Response (200):**
+```json
+{
+  "message": "Bid placed successfully."
+}
+```
+
+**Response (400):**
+```json
+{
+  "message": "Could not place bid. The auction may have ended or your bid is not high enough."
+}
+```
+
+---
+
+## �👑 Admin Controller (`/api/admin`)
 
 **Note:** All admin endpoints require Admin role authentication.
 

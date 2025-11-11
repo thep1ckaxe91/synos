@@ -141,18 +141,64 @@ namespace Synos.Api.Controllers
                 return Unauthorized(new { message = "Invalid token or not a seller." });
             }
 
+            // Validate auction times first (client-side validation)
+            if (createAuctionDto.StartTime >= createAuctionDto.EndTime)
+            {
+                return BadRequest(new { message = "Auction start time must be before end time." });
+            }
+
+            if (createAuctionDto.StartTime <= DateTime.UtcNow)
+            {
+                return BadRequest(new { message = "Auction start time must be in the future." });
+            }
+
+            // Validate artwork exists and is suitable for auction
+            var validationResult = await ValidateArtworkForAuction(sellerId.Value, createAuctionDto.ArtworkId);
+            if (validationResult != null)
+            {
+                return BadRequest(validationResult);
+            }
+
             var auction = await _sellerService.CreateAuctionAsync(sellerId.Value, createAuctionDto);
             if (auction == null)
             {
-                return BadRequest(new { message = "Failed to create auction. Check artwork availability, ownership, or auction times." });
+                return BadRequest(new { message = "Failed to create auction due to an unexpected error." });
             }
-            return CreatedAtAction(nameof(GetArtworks), new { }, auction); // Reusing GetArtworks for CreatedAtAction, ideally should be GetAuctionDetails
+            return CreatedAtAction(nameof(GetArtworks), new { }, auction);
+        }
+
+        private async Task<object?> ValidateArtworkForAuction(long sellerId, long artworkId)
+        {
+            // This method provides specific error messages for auction creation failures
+            // Note: This duplicates some logic from the service for better error reporting
+            
+            var artworks = await _sellerService.GetArtworksBySellerAsync(sellerId);
+            var artwork = artworks.FirstOrDefault(a => a.Id == artworkId);
+            
+            if (artwork == null)
+            {
+                return new { message = "Artwork not found or not owned by you." };
+            }
+
+            if (artwork.SaleType != "Auction")
+            {
+                return new { message = "This artwork is not set for auction. Please update the artwork's sale type to 'Auction' first." };
+            }
+
+            if (artwork.Status != "Available")
+            {
+                return new { message = $"Artwork is not available for auction. Current status: {artwork.Status}" };
+            }
+
+            // Check for existing active auctions (this would need to be implemented in service)
+            // For now, we'll let the service handle this validation
+            
+            return null; // No validation errors
         }
 
         private long? GetCurrentSellerId()
         {
-            // A "Seller" is a "Member" with the role "Seller".
-            // We can use the existing GetCurrentMemberId extension method.
+            // Get current user's ID - works for both Sellers and Admins
             return HttpContext.GetCurrentMemberId();
         }
     }

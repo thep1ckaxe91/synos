@@ -32,6 +32,7 @@ namespace Synos.Api.Repositories
                 .Include(a => a.Artwork)
                     .ThenInclude(aw => aw.ArtworkImages)
                 .Include(a => a.Artwork.Seller)
+                .Include(a => a.Artwork.Category)
                 .FirstOrDefaultAsync(a => a.Id == id && a.DeletedAt == null);
         }
 
@@ -46,14 +47,12 @@ namespace Synos.Api.Repositories
 
         public async Task<IEnumerable<Auction>> GetActiveAuctionsAsync()
         {
-            var currentTime = TimeUtils.GetCurrentTime();
             return await _context.Auctions
                 .Include(a => a.Artwork)
                     .ThenInclude(aw => aw.ArtworkImages)
                 .Include(a => a.Artwork.Seller)
                 .Where(a => a.DeletedAt == null && 
-                           a.StartTime <= currentTime && 
-                           a.EndTime > currentTime)
+                           a.Status == AuctionStatus.Running)
                 .ToListAsync();
         }
 

@@ -66,7 +66,6 @@ namespace Synos.Api.Controllers
 
             if (paymentUrl == null)
             {
-                // Can be null if order not found, user doesn't have permission, or order is not pending.
                 return NotFound(new { message = "Order not found, you do not have permission, or the order cannot be paid for." });
             }
 
@@ -104,12 +103,12 @@ namespace Synos.Api.Controllers
         }
 
         [HttpGet("auctions/{id}")]
-        public async Task<IActionResult> GetAuctionDetails(long id) // Changed from Guid to long
+        public async Task<ActionResult<AuctionDetailDto>> GetAuctionDetails(long id)
         {
             var auction = await _buyerService.GetAuctionDetailsAsync(id);
             if (auction == null)
             {
-                return NotFound();
+                return NotFound(new { message = "Auction not found" });
             }
             return Ok(auction);
         }

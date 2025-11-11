@@ -14,7 +14,7 @@ namespace Synos.Api.Services
 
         // Auction methods
         Task<IEnumerable<Auction>> GetActiveAuctionsAsync();
-        Task<Auction?> GetAuctionDetailsAsync(long auctionId);
+        Task<AuctionDetailDto?> GetAuctionDetailsAsync(long auctionId);
         Task<bool> PlaceBidAsync(long auctionId, long memberId, decimal amount);
     }
 }

@@ -233,9 +233,87 @@ namespace Synos.Api.Services
             return await _auctionRepository.GetActiveAuctionsAsync();
         }
 
-        public async Task<Auction?> GetAuctionDetailsAsync(long auctionId)
+        public async Task<AuctionDetailDto?> GetAuctionDetailsAsync(long auctionId)
         {
-            return await _auctionRepository.GetAuctionByIdAsync(auctionId);
+            var auction = await _auctionRepository.GetAuctionByIdAsync(auctionId);
+            if (auction == null)
+                return null;
+
+            // Get bid count and highest bid from JSON file
+            int totalBids = 0;
+            decimal? currentHighestBid = null;
+
+            try
+            {
+                var auctionDataPath = Path.Combine(_webHostEnvironment.ContentRootPath, "AuctionData");
+                var bidsFilePath = Path.Combine(auctionDataPath, $"{auctionId}.json");
+                
+                if (File.Exists(bidsFilePath))
+                {
+                    var bidsJson = await File.ReadAllTextAsync(bidsFilePath);
+                    var bids = JsonSerializer.Deserialize<JsonElement>(bidsJson);
+                    
+                    totalBids = bids.GetArrayLength();
+                    
+                    foreach (var bid in bids.EnumerateArray())
+                    {
+                        if (bid.TryGetProperty("amount", out var amountProp))
+                        {
+                            var amount = amountProp.GetDecimal();
+                            if (!currentHighestBid.HasValue || amount > currentHighestBid.Value)
+                            {
+                                currentHighestBid = amount;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reading bid data for auction {AuctionId}", auctionId);
+            }
+
+            return new AuctionDetailDto
+            {
+                Id = auction.Id,
+                ArtworkId = auction.ArtworkId,
+                StartTime = auction.StartTime,
+                EndTime = auction.EndTime,
+                StartingPrice = auction.StartingPrice,
+                ReservePrice = auction.ReservePrice,
+                MinimumIncrement = auction.MinimumIncrement,
+                Status = auction.Status.ToString(),
+                WinnerBidId = auction.WinnerBidId,
+                CreatedAt = auction.CreatedAt,
+                TotalBids = totalBids,
+                CurrentHighestBid = currentHighestBid,
+                Artwork = new AuctionArtworkDto
+                {
+                    Id = auction.Artwork.Id,
+                    Title = auction.Artwork.Title,
+                    Description = auction.Artwork.Description ?? string.Empty,
+                    CreationYear = auction.Artwork.CreationYear ?? 0,
+                    Dimensions = auction.Artwork.Dimensions ?? string.Empty,
+                    Condition = auction.Artwork.Condition.ToString(),
+                    Currency = auction.Artwork.Currency,
+                    Status = auction.Artwork.Status.ToString(),
+                    CategoryName = auction.Artwork.Category?.Name ?? "Uncategorized",
+                    Seller = new AuctionSellerDto
+                    {
+                        Id = auction.Artwork.Seller.Id,
+                        FullName = auction.Artwork.Seller.FullName,
+                        Bio = auction.Artwork.Seller.Bio,
+                        ProfileImage = auction.Artwork.Seller.ProfileImage
+                    },
+                    ArtworkImages = auction.Artwork.ArtworkImages.Where(img => img.DeletedAt == null).Select(img => new ArtworkImageDto
+                    {
+                        Id = img.Id,
+                        ImageUrl = img.FilePath,
+                        IsPrimary = img.IsPrimary,
+                        UploadedAt = img.UploadedAt
+                    }).ToList()
+                }
+            };
         }
 
         public async Task<bool> PlaceBidAsync(long auctionId, long memberId, decimal amount)
