@@ -21,11 +21,13 @@ namespace Synos.Api.Services
             var hashSecret = vnpayConfig["HashSecret"];
             var baseUrl = vnpayConfig["BaseUrl"];
             var returnUrl = vnpayConfig["ReturnUrl"];
+            var ipnUrl = vnpayConfig["IpnUrl"];
 
             ArgumentNullException.ThrowIfNull(tmnCode);
             ArgumentNullException.ThrowIfNull(hashSecret);
             ArgumentNullException.ThrowIfNull(baseUrl);
             ArgumentNullException.ThrowIfNull(returnUrl);
+            ArgumentNullException.ThrowIfNull(ipnUrl);
 
             var pay = new VnPayLibrary();
             pay.AddRequestData("vnp_Version", vnpayConfig["Version"] ?? "2.1.0");
@@ -39,6 +41,7 @@ namespace Synos.Api.Services
             pay.AddRequestData("vnp_OrderInfo", model.OrderInfo);
             pay.AddRequestData("vnp_OrderType", "other"); // Can be customized
             pay.AddRequestData("vnp_ReturnUrl", returnUrl);
+            pay.AddRequestData("vnp_IpnUrl", ipnUrl);
             pay.AddRequestData("vnp_TxnRef", model.OrderId.ToString());
 
             string paymentUrl = pay.CreateRequestUrl(baseUrl, hashSecret);

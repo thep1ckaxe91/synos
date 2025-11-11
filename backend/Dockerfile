@@ -41,8 +41,11 @@ COPY scripts/ /app/scripts/
 # Make scripts executable
 RUN chmod +x /app/scripts/*.sh
 
-# Install netcat and mysql client for database connection testing and verification
-RUN apt-get update && apt-get install -y netcat-openbsd default-mysql-client && rm -rf /var/lib/apt/lists/*
+# Install netcat, mysql client, and dos2unix for database connection testing, verification, and script formatting
+RUN apt-get update && apt-get install -y netcat-openbsd default-mysql-client dos2unix && rm -rf /var/lib/apt/lists/*
+
+# Convert script line endings from CRLF to LF
+RUN dos2unix /app/scripts/*.sh
 
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production

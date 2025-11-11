@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 echo "🔄 Starting migration process..."
 
@@ -13,32 +14,11 @@ echo "✅ MySQL is ready!"
 # Change to source directory for migrations
 cd /app/source
 
-# Check if migrations exist and apply them, or create new ones if needed
-echo "🔍 Checking existing migrations..."
-if [ -d "Migrations" ] && [ "$(ls -A Migrations)" ]; then
-    echo "✅ Migrations found, applying them..."
-    dotnet ef database update --no-build --verbose
-else
-    echo "🆕 No migrations found, creating fresh migration..."
-    dotnet ef migrations add InitialCreate --no-build --verbose
-    if [ $? -eq 0 ]; then
-        echo "✅ Migration created successfully!"
-        dotnet ef database update --no-build --verbose
-    else
-        echo "❌ Failed to create migration!"
-        exit 1
-    fi
-fi
-if [ $? -eq 0 ]; then
-    echo "✅ Database and tables created successfully!"
-else
-    echo "❌ Failed to apply migrations!"
-    exit 1
-fi
+# Apply any pending migrations
+echo "Applying database migrations..."
+dotnet ef database update --no-build
 
-# Verify tables were created
-echo "🔍 Verifying tables were created..."
-mysql -h mysql -u synos_user -psynos_password synos_db -e "SHOW TABLES;" || echo "Could not verify tables"
+echo "✅ Database migrations applied successfully!"
 
 # Run test data seeding
 echo "🌱 Seeding test data..."

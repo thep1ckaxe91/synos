@@ -1,4 +1,5 @@
 using Synos.Api.DTOs;
+using Synos.Api.Models.AuctionDataModels;
 
 namespace Synos.Api.Services
 {
@@ -8,5 +9,6 @@ namespace Synos.Api.Services
         Task<SellerArtworkDto?> CreateArtworkWithFilesAsync(long sellerId, CreateArtworkWithFilesDto artworkDto);
         Task<IEnumerable<SellerArtworkDto>> GetArtworksBySellerAsync(long sellerId);
         Task<IEnumerable<SalesHistoryDto>> GetSalesHistoryAsync(long sellerId);
+        Task<AuctionData?> CreateAuctionAsync(long sellerId, CreateAuctionDto createAuctionDto);
     }
 }

@@ -7,6 +7,7 @@ using Synos.Api.Data;
 using Synos.Api.Middlewares;
 using Synos.Api.Repositories;
 using Synos.Api.Services;
+using Synos.Api.Services.AuctionServices;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,8 +37,14 @@ builder.Services.AddScoped<ICommissionRepository, CommissionRepository>();
 builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ISellerService, SellerService>();
+builder.Services.AddScoped<IBuyerService, BuyerService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IVnPayService, VnPayService>();
+
+// Register auction services
+builder.Services.AddScoped<IAuctionFileManagerService, AuctionFileManagerService>();
+builder.Services.AddHostedService<AuctionProcessorService>();
+
 
 // Configure JWT Authentication
 var jwtSecretKey = builder.Configuration["JwtSettings:SecretKey"] ?? "SynosSecretKeyForJWT2025VietnamUTC+7DefaultKey123456789";
@@ -70,12 +77,12 @@ builder.Services.AddAuthorization();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: "AllowFrontend",
-                      policy  =>
-                      {
-                          policy.WithOrigins("*")
+                    policy  =>
+                    {
+                        policy.WithOrigins("*")
                                 .AllowAnyHeader()
                                 .AllowAnyMethod();
-                      });
+                    });
 });
 builder.Services.AddHealthChecks();
 
@@ -88,6 +95,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseCors("AllowFrontend");
 
 // Enable serving static files (uploaded images)
