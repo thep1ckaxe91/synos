@@ -12,14 +12,14 @@ RUN corepack prepare yarn@1.22.19 --activate
 RUN yarn install
 
 # 2. Build the app
-FROM node:22-bullseye AS builder
+FROM node:20-bullseye AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN yarn build
 
 # 3. Production image
-FROM node:22-bullseye AS runner
+FROM node:20-bullseye AS runner
 WORKDIR /app
 
 COPY --from=builder /app/public ./public
