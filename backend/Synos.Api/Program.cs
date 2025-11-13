@@ -44,6 +44,7 @@ builder.Services.AddScoped<ISellerService, SellerService>();
 builder.Services.AddScoped<IBuyerService, BuyerService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IVnPayService, VnPayService>();
+builder.Services.AddScoped<IGuestService, GuestService>();
 
 // Register background services for auction and order processing
 builder.Services.AddHostedService<AuctionEndingService>();
