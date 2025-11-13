@@ -1,33 +1,55 @@
 services:
-  mariadb:
-    image: mysql:8.0.42
-    env_file:
-      - .env
+  mysql:
+    image: mysql:8.0
+    container_name: synos_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: synos_root_password
+      MYSQL_DATABASE: synos_db
+      MYSQL_USER: synos_user
+      MYSQL_PASSWORD: synos_password
     ports:
       - "3306:3306"
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
-      context: ./backend/Synos.Api
-      dockerfile: ../Dockerfile
-    ports:
-      - "8080:8080" # ASP.NET application listens on port 8080 inside the container
-    depends_on:
-      - mariadb
-    env_file:
-      - .env
-    # command: [ "dotnet", "run" ]
-
-  frontend:
-    build:
-      context: ./frontend
+      context: ./backend
       dockerfile: Dockerfile
+    container_name: synos_backend
     ports:
-      - "3000:3000" # Next.js default port
+      - "8080:5000" # ASP.NET application listens on port 8080 inside the container
     depends_on:
-     - backend
+      mysql:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=mysql;Database=synos_db;User Id=synos_user;Password=synos_password;Port=3306;
+  frontend-admin:
+    build:
+      context: ./frontend/admin
+      dockerfile: Dockerfile
+    container_name: synos_frontend_admin
+    ports:
+      - "3000:3000" # Next.js admin app
+    depends_on:
+      - backend
+
+  frontend-gallery:
+    build:
+      context: ./frontend/gallery
+      dockerfile: Dockerfile
+    container_name: synos_frontend_gallery
+    ports:
+      - "3001:3000" # Gallery app mapped to host 3001
+    depends_on:
+      - backend
 
 volumes:
-  mariadb_data:
+  mysql_data:

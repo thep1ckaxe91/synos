@@ -1,0 +1,124 @@
+# Hướng dẫn Migration Database cho Synos Backend
+
+## Bước 1: Cài đặt EF Core Tools (nếu chưa có)
+```bash
+dotnet tool install --global dotnet-ef
+```
+
+## Bước 2: Restore packages
+```bash
+cd backend/Synos.Api
+dotnet restore
+```
+
+## Bước 3: Build project để kiểm tra lỗi
+```bash
+dotnet build
+```
+
+## Bước 4: Tạo migration đầu tiên
+```bash
+dotnet ef migrations add InitialCreate
+```
+
+## Bước 5: Cập nhật database (tạo database và bảng)
+```bash
+dotnet ef database update
+```
+
+## Lưu ý quan trọng:
+
+### Nếu sử dụng SQL Server:
+- Đảm bảo SQL Server đang chạy
+- Connection string trong appsettings.json:
+```json
+"ConnectionStrings": {
+  "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=SynosDb;Trusted_Connection=true;MultipleActiveResultSets=true"
+}
+```
+
+### Nếu muốn sử dụng SQLite (đơn giản hơn):
+1. Thay đổi package trong Synos.Api.csproj:
+```xml
+<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0" />
+```
+
+2. Thay đổi connection string trong appsettings.json:
+```json
+"ConnectionStrings": {
+  "DefaultConnection": "Data Source=synos.db"
+}
+```
+
+3. Cập nhật Program.cs:
+```csharp
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+```
+
+## Các lệnh EF Core hữu ích khác:
+
+### Xem danh sách migrations:
+```bash
+dotnet ef migrations list
+```
+
+### Tạo migration mới khi thay đổi model:
+```bash
+dotnet ef migrations add TenMigration
+```
+
+### Rollback về migration trước:
+```bash
+dotnet ef database update TenMigrationTruoc
+```
+
+### Xóa migration chưa apply:
+```bash
+dotnet ef migrations remove
+```
+
+### Tạo script SQL từ migration:
+```bash
+dotnet ef migrations script
+```
+
+### Xóa database:
+```bash
+dotnet ef database drop
+```
+
+## Kiểm tra kết quả:
+Sau khi chạy migration thành công, bạn sẽ thấy:
+- Database được tạo với tên "SynosDb" (hoặc "synos.db" nếu dùng SQLite)
+- Tất cả các bảng: admin, members, sellers, categories, artworks, artwork_images, auctions, orders, order_items, exhibitions, exhibition_artworks, commissions, favorite
+- Bảng __EFMigrationsHistory để track migrations
+
+## Cấu trúc bảng chính:
+- **admin**: Quản trị viên hệ thống
+- **members**: Người dùng (customer, artist, admin)
+- **sellers**: Thông tin artist (1-1 với members)
+- **categories**: Danh mục artwork
+- **artworks**: Tác phẩm nghệ thuật
+- **artwork_images**: Hình ảnh của artwork
+- **auctions**: Phiên đấu giá
+- **orders**: Đơn hàng
+- **order_items**: Chi tiết đơn hàng
+- **exhibitions**: Triển lãm
+- **exhibition_artworks**: Artwork trong triển lãm (many-to-many)
+- **commissions**: Hoa hồng
+- **favorite**: Artwork yêu thích (many-to-many)
+
+## Troubleshooting:
+
+### Lỗi "Unable to create an object of type 'ApplicationDbContext'":
+- Đảm bảo connection string đúng trong appsettings.json
+- Kiểm tra database server đang chạy
+
+### Lỗi build:
+- Chạy `dotnet clean` và `dotnet restore`
+- Kiểm tra lại syntax trong các model classes
+
+### Lỗi foreign key:
+- Kiểm tra các relationship trong ApplicationDbContext.cs
+- Đảm bảo các entity có đúng navigation properties

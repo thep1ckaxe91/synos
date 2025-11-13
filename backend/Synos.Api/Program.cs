@@ -1,19 +1,93 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.IdentityModel.Tokens;
+using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
+using Synos.Api.Data;
+using Synos.Api.Middlewares;
+using Synos.Api.Repositories;
+using Synos.Api.Services;
+using Synos.Api.Services.AuctionServices;
+using System.Text;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
 builder.Services.AddOpenApi();
+builder.Services.AddHttpContextAccessor();
+
+// Add Entity Framework
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"), 
+        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))));
+
+// Register repositories and services  
+builder.Services.AddScoped<IMemberRepository, MemberRepository>();
+builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+builder.Services.AddScoped<IArtworkRepository, ArtworkRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IExhibitionRepository, ExhibitionRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IAuctionRepository, AuctionRepository>();
+builder.Services.AddScoped<ICommissionRepository, CommissionRepository>();
+
+// Register services
+builder.Services.AddScoped<IMemberService, MemberService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<ISellerService, SellerService>();
+builder.Services.AddScoped<IBuyerService, BuyerService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IVnPayService, VnPayService>();
+builder.Services.AddScoped<IGuestService, GuestService>();
+
+// Register background services for auction and order processing
+builder.Services.AddHostedService<AuctionEndingService>();
+builder.Services.AddHostedService<OrderExpirationService>();
+
+
+// Configure JWT Authentication
+var jwtSecretKey = builder.Configuration["JwtSettings:SecretKey"] ?? "SynosSecretKeyForJWT2025VietnamUTC+7DefaultKey123456789";
+var jwtIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "SynosApi";
+var jwtAudience = builder.Configuration["JwtSettings:Audience"] ?? "SynosApp";
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey)),
+        ValidateIssuer = true,
+        ValidIssuer = jwtIssuer,
+        ValidateAudience = true,
+        ValidAudience = jwtAudience,
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+builder.Services.AddAuthorization();
 
 // Configure CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: "AllowFrontend",
-                      policy  =>
-                      {
-                          policy.WithOrigins("*")
+                    policy  =>
+                    {
+                        policy.WithOrigins("*")
                                 .AllowAnyHeader()
                                 .AllowAnyMethod();
-                      });
+                    });
 });
 builder.Services.AddHealthChecks();
 
@@ -26,25 +100,34 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseCors("AllowFrontend");
 
-var summaries = new[]
+// Enable serving static files (uploaded images)
+app.UseStaticFiles();
+
+// Configure static file options for uploads directory
+var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "wwwroot", "uploads");
+if (!Directory.Exists(uploadsPath))
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    Directory.CreateDirectory(uploadsPath);
+}
+
+app.UseStaticFiles(new StaticFileOptions()
+{
+    FileProvider = new PhysicalFileProvider(uploadsPath),
+    RequestPath = "/uploads"
+});
+
+// Use authentication and authorization
+app.UseAuthentication();
+app.UseJwtMiddleware(); // Custom JWT middleware
+app.UseAuthorization();
+
+// Map controllers
+app.MapControllers();
 
 app.MapGet("/", () => "Hello from ASP.NET Backend!");
-app.MapHealthChecks("/api/health"); // fixme: deployed version doesnt work, test locally the api
-app.MapGet("/api/randomstring", () => GetRandomSummary(summaries));
+app.MapHealthChecks("/api/health");
 
 app.Run();
-
-string GetRandomSummary(string[] summaries)
-{
-    return summaries[Random.Shared.Next(summaries.Length)];
-}
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
