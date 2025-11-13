@@ -24,13 +24,14 @@ services:
       dockerfile: Dockerfile
     container_name: synos_backend
     ports:
-      - "8080:5000" # ASP.NET application listens on port 8080 inside the container
+      - "5000:8080" # ASP.NET application listens on port 8080 inside the container
     depends_on:
       mysql:
         condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=mysql;Database=synos_db;User Id=synos_user;Password=synos_password;Port=3306;
+
   frontend-admin:
     build:
       context: ./frontend/admin
