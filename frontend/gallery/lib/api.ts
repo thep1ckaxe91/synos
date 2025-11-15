@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"
 
 export interface ApiError {
   message: string
@@ -87,7 +87,7 @@ export class ApiClient {
 
   // Auth endpoints
   async login(email: string, password: string): Promise<AuthResultDto> {
-    const response = await this.request<AuthResultDto>("/auth/login", {
+    const response = await this.request<AuthResultDto>("/members/login", {
       method: "POST",
       body: JSON.stringify({ email, password } as MemberLoginDto),
     })
@@ -98,7 +98,7 @@ export class ApiClient {
   }
 
   async register(data: MemberRegisterDto): Promise<AuthResultDto> {
-    const response = await this.request<AuthResultDto>("/auth/register", {
+    const response = await this.request<AuthResultDto>("/members/register", {
       method: "POST",
       body: JSON.stringify(data),
     })
@@ -254,6 +254,35 @@ export class ApiClient {
 
   async getSellerAuctions(): Promise<AuctionResponseDto[]> {
     return this.request<AuctionResponseDto[]>("/seller/auctions", { method: "GET" })
+  }
+
+  // Additional guest endpoints
+  async getFeaturedArtworks(count = 10): Promise<GuestArtworkDto[]> {
+    return this.request<GuestArtworkDto[]>(`/guest/artworks/featured?count=${count}`, { method: "GET" })
+  }
+
+  async getRecentArtworks(count = 10): Promise<GuestArtworkDto[]> {
+    return this.request<GuestArtworkDto[]>(`/guest/artworks/recent?count=${count}`, { method: "GET" })
+  }
+
+  async getRelatedArtworks(artworkId: number, count = 5): Promise<GuestArtworkDto[]> {
+    return this.request<GuestArtworkDto[]>(`/guest/artworks/${artworkId}/related?count=${count}`, { method: "GET" })
+  }
+
+  async getUpcomingExhibitions(): Promise<GuestExhibitionDto[]> {
+    return this.request<GuestExhibitionDto[]>("/guest/exhibitions/upcoming", { method: "GET" })
+  }
+
+  async getPastExhibitions(): Promise<GuestExhibitionDto[]> {
+    return this.request<GuestExhibitionDto[]>("/guest/exhibitions/past", { method: "GET" })
+  }
+
+  async getExhibitionArtworks(exhibitionId: number): Promise<GuestArtworkDto[]> {
+    return this.request<GuestArtworkDto[]>(`/guest/exhibitions/${exhibitionId}/artworks`, { method: "GET" })
+  }
+
+  async getApplicationInfo(): Promise<any> {
+    return this.request<any>("/guest/info", { method: "GET" })
   }
 }
 

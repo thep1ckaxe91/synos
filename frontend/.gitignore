@@ -1,6 +1,8 @@
 ### NextJS ###
 # dependencies
-/node_modules
+/gallery/node_modules
+/gallery/.next
+/admin/node_modules
 /.pnp
 .pnp.js
 
