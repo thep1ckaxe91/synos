@@ -1,38 +1,55 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, Palette, ShoppingCart, TrendingUp } from "lucide-react"
+"use client"
 
-const stats = [
-  {
-    title: "Total Users",
-    value: "2,543",
-    change: "+12.5%",
-    icon: Users,
-    color: "text-chart-1",
-  },
-  {
-    title: "Artworks",
-    value: "1,234",
-    change: "+8.2%",
-    icon: Palette,
-    color: "text-chart-2",
-  },
-  {
-    title: "Transactions",
-    value: "856",
-    change: "+23.1%",
-    icon: ShoppingCart,
-    color: "text-chart-3",
-  },
-  {
-    title: "Revenue",
-    value: "$45,231",
-    change: "+15.3%",
-    icon: TrendingUp,
-    color: "text-chart-4",
-  },
-]
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Users, Palette, ShoppingCart, TrendingUp, Loader2 } from "lucide-react"
+import { apiService } from "@/lib/api-service"
+import { DashboardStats } from "@/lib/types"
+import { toast } from "sonner"
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [pendingArtworks, setPendingArtworks] = useState<number>(0)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadDashboardData()
+  }, [])
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true)
+      const [statisticsResponse, artworksResponse] = await Promise.all([
+        apiService.getStatistics(),
+        apiService.getArtworks({ skip: 0, take: 1000 })
+      ])
+      
+      setStats(statisticsResponse)
+      const pending = artworksResponse.items?.filter((artwork: any) => artwork.status === 'Pending') || []
+      setPendingArtworks(pending.length)
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error)
+      toast.error('Failed to load dashboard statistics')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading dashboard...</span>
+      </div>
+    )
+  }
   return (
     <div className="space-y-6">
       <div>
@@ -41,20 +58,49 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
-              <stat.icon className={`h-5 w-5 ${stat.color}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-accent">{stat.change}</span> from last month
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Members</CardTitle>
+            <Users className="h-5 w-5 text-chart-1" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">{stats?.totalMembers || 0}</div>
+            <p className="text-xs text-muted-foreground">Registered users</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Artworks</CardTitle>
+            <Palette className="h-5 w-5 text-chart-2" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">{stats?.totalArtworks || 0}</div>
+            <p className="text-xs text-muted-foreground">{stats?.pendingRegistrations || 0} pending approval</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Sales</CardTitle>
+            <ShoppingCart className="h-5 w-5 text-chart-3" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">{stats?.totalTransactions || 0}</div>
+            <p className="text-xs text-muted-foreground">Completed transactions</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+            <TrendingUp className="h-5 w-5 text-chart-4" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">{formatCurrency(stats?.totalRevenue || 0)}</div>
+            <p className="text-xs text-muted-foreground">Platform earnings</p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -66,24 +112,30 @@ export default function AdminDashboard() {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-foreground">New User Registrations</p>
-                <p className="text-sm text-muted-foreground">12 pending approvals</p>
-              </div>
-              <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">12</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
                 <p className="font-medium text-foreground">Artwork Submissions</p>
-                <p className="text-sm text-muted-foreground">8 pending reviews</p>
+                <p className="text-sm text-muted-foreground">{stats?.pendingRegistrations || 0} pending reviews</p>
               </div>
-              <span className="rounded-full bg-accent/10 px-3 py-1 text-sm font-medium text-accent">8</span>
+              <span className="rounded-full bg-accent/10 px-3 py-1 text-sm font-medium text-accent">
+                {stats?.pendingRegistrations || 0}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-foreground">Purchase Requests</p>
-                <p className="text-sm text-muted-foreground">5 pending confirmations</p>
+                <p className="font-medium text-foreground">Active Exhibitions</p>
+                <p className="text-sm text-muted-foreground">{stats?.activeExhibitions || 0} currently running</p>
               </div>
-              <span className="rounded-full bg-chart-3/10 px-3 py-1 text-sm font-medium text-chart-3">5</span>
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                {stats?.activeExhibitions || 0}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-foreground">Total Members</p>
+                <p className="text-sm text-muted-foreground">Platform users</p>
+              </div>
+              <span className="rounded-full bg-chart-3/10 px-3 py-1 text-sm font-medium text-chart-3">
+                {stats?.totalMembers || 0}
+              </span>
             </div>
           </CardContent>
         </Card>

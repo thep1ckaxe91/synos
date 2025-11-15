@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ShoppingCart, Heart, User, Menu, Search } from "lucide-react"
+import { ShoppingCart, Heart, User, Menu, Search, Briefcase } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/auth-context"
 import { useCart } from "@/contexts/cart-context"
@@ -19,6 +19,8 @@ import { Badge } from "@/components/ui/badge"
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth()
   const { totalItems } = useCart()
+
+  const isSeller = user?.role === 'Seller'
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -61,17 +63,28 @@ export function Header() {
                 </Link>
               </Button>
 
-              <Button variant="ghost" size="icon" asChild className="relative">
-                <Link href="/cart">
-                  <ShoppingCart className="h-5 w-5" />
-                  {totalItems > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                      {totalItems}
-                    </Badge>
-                  )}
-                  <span className="sr-only">Cart</span>
-                </Link>
-              </Button>
+              {!isSeller && (
+                <Button variant="ghost" size="icon" asChild className="relative">
+                  <Link href="/cart">
+                    <ShoppingCart className="h-5 w-5" />
+                    {totalItems > 0 && (
+                      <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                        {totalItems}
+                      </Badge>
+                    )}
+                    <span className="sr-only">Cart</span>
+                  </Link>
+                </Button>
+              )}
+
+              {isSeller && (
+                <Button variant="ghost" size="icon" asChild>
+                  <Link href="/seller/dashboard">
+                    <Briefcase className="h-5 w-5" />
+                    <span className="sr-only">Seller Dashboard</span>
+                  </Link>
+                </Button>
+              )}
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -85,18 +98,35 @@ export function Header() {
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">{user?.fullName}</p>
                       <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                      <p className="text-xs leading-none text-muted-foreground mt-1">
+                        <Badge variant="outline" className="text-xs">{user?.role}</Badge>
+                      </p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile">Profile</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/orders">My Orders</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/favorites">My Favorites</Link>
-                  </DropdownMenuItem>
+                  {!isSeller && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/orders">My Orders</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/favorites">My Favorites</Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {isSeller && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/seller/dashboard">Dashboard</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/seller/artworks">My Artworks</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/seller/sales">Sales History</Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => logout()}>Log out</DropdownMenuItem>
                 </DropdownMenuContent>

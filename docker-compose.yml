@@ -24,7 +24,7 @@ services:
       dockerfile: Dockerfile
     container_name: synos_backend
     ports:
-      - "5000:8080" # ASP.NET application listens on port 8080 inside the container
+      - "8080:8080" # ASP.NET application listens on port 8080 inside the container
     depends_on:
       mysql:
         condition: service_healthy

@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Clock, Gavel } from "lucide-react"
+import { Clock, Gavel } from 'lucide-react'
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { apiClient } from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { getImageUrl, formatPrice } from "@/lib/utils"
 
 export default function AuctionsPage() {
   const [auctions, setAuctions] = useState<any[]>([])
@@ -81,12 +82,12 @@ export default function AuctionsPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {auctions.map((auction) => (
-                  <Link key={auction.id} href={`/auctions/${auction.artworkId}`}>
+                  <Link key={auction.id} href={`/auctions/${auction.artworkId || auction.id}`}>
                     <Card className="overflow-hidden group hover:shadow-lg transition-shadow duration-300">
                       <div className="aspect-[3/4] relative overflow-hidden bg-muted">
                         <Image
-                          src={auction.artwork?.artworkImages?.[0]?.imageUrl || "/placeholder.svg?height=600&width=450"}
-                          alt={auction.artwork?.title || "Auction item"}
+                          src={getImageUrl(auction.artwork?.artworkImages?.[0]?.imageUrl || auction.images?.[0]?.imageUrl) || "/placeholder.svg"}
+                          alt={auction.artwork?.title || auction.title || "Auction item"}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
                         />
@@ -96,17 +97,17 @@ export default function AuctionsPage() {
                       </div>
                       <CardContent className="p-6">
                         <h3 className="font-serif text-xl font-semibold mb-2 group-hover:text-accent transition-colors">
-                          {auction.artwork?.title}
+                          {auction.artwork?.title || auction.title}
                         </h3>
-                        <p className="text-sm text-muted-foreground mb-4">{auction.artwork?.seller?.fullName}</p>
+                        <p className="text-sm text-muted-foreground mb-4">{auction.artwork?.seller?.fullName || auction.sellerName}</p>
 
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Current Bid</span>
                             <span className="font-semibold">
                               {auction.currentHighestBid
-                                ? `$${auction.currentHighestBid.toLocaleString()}`
-                                : `Starting at $${auction.startingPrice.toLocaleString()}`}
+                                ? formatPrice(auction.currentHighestBid, auction.currency || "USD")
+                                : `Starting at ${formatPrice(auction.startingPrice, auction.currency || "USD")}`}
                             </span>
                           </div>
 
@@ -118,9 +119,9 @@ export default function AuctionsPage() {
                             <span className="font-medium text-accent">{getTimeRemaining(auction.endTime)}</span>
                           </div>
 
-                          {auction.totalBids > 0 && (
+                          {(auction.totalBids > 0 || auction.bidCount > 0) && (
                             <div className="text-xs text-muted-foreground">
-                              {auction.totalBids} {auction.totalBids === 1 ? "bid" : "bids"}
+                              {auction.totalBids || auction.bidCount} {(auction.totalBids || auction.bidCount) === 1 ? "bid" : "bids"}
                             </div>
                           )}
                         </div>

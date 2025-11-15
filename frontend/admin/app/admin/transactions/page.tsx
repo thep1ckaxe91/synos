@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,100 +15,130 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Search, Check, X, Eye, DollarSign, TrendingUp, Clock } from "lucide-react"
+import { Search, Check, X, Eye, DollarSign, TrendingUp, Clock, Loader2 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-
-// Mock data
-const pendingPurchases = [
-  {
-    id: 1,
-    artwork: "Sunset Dreams",
-    buyer: "David Brown",
-    seller: "John Smith",
-    amount: "$2,500",
-    type: "Fixed Price",
-    date: "2025-01-08",
-  },
-  {
-    id: 2,
-    artwork: "Urban Life",
-    buyer: "Emma Wilson",
-    seller: "Michael Chen",
-    amount: "$800",
-    type: "Fixed Price",
-    date: "2025-01-08",
-  },
-]
-
-const auctionBids = [
-  {
-    id: 3,
-    artwork: "Abstract Thoughts",
-    bidder: "Lisa Anderson",
-    currentBid: "$1,200",
-    bids: 5,
-    endDate: "2025-01-10",
-    status: "Active",
-  },
-  {
-    id: 4,
-    artwork: "Digital Future",
-    bidder: "David Brown",
-    currentBid: "$1,800",
-    bids: 8,
-    endDate: "2025-01-09",
-    status: "Active",
-  },
-]
-
-const completedTransactions = [
-  {
-    id: 5,
-    artwork: "Ocean Waves",
-    buyer: "Emma Wilson",
-    seller: "Lisa Anderson",
-    amount: "$1,200",
-    type: "Fixed Price",
-    date: "2025-01-05",
-    status: "Completed",
-  },
-  {
-    id: 6,
-    artwork: "Mountain Vista",
-    buyer: "David Brown",
-    seller: "Emma Wilson",
-    amount: "$3,500",
-    type: "Auction",
-    date: "2025-01-03",
-    status: "Shipped",
-  },
-  {
-    id: 7,
-    artwork: "City Lights",
-    buyer: "Lisa Anderson",
-    seller: "John Smith",
-    amount: "$950",
-    type: "Fixed Price",
-    date: "2025-01-02",
-    status: "Completed",
-  },
-]
+import { apiService } from "@/lib/api-service"
+import { Transaction } from "@/lib/types"
+import { toast } from "sonner"
+import { normalizeTransactionStatus } from "@/lib/constants"
 
 export default function TransactionManagement() {
-  const [selectedTransaction, setSelectedTransaction] = useState<any>(null)
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
   const [showApprovalDialog, setShowApprovalDialog] = useState(false)
   const [showDetailsDialog, setShowDetailsDialog] = useState(false)
   const [approvalAction, setApprovalAction] = useState<"approve" | "reject">("approve")
+  
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [loading, setLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState(false)
 
-  const handleApproval = (transaction: any, action: "approve" | "reject") => {
+  useEffect(() => {
+    loadTransactions()
+  }, [])
+
+  const loadTransactions = async () => {
+    try {
+      setLoading(true)
+      const response = await apiService.getTransactions({ skip: 0, take: 100 })
+      
+      let transactionsData: any[] = []
+      if (Array.isArray(response)) {
+        transactionsData = response
+      } else if (response.items && Array.isArray(response.items)) {
+        transactionsData = response.items
+      } else if (response.data && Array.isArray(response.data)) {
+        transactionsData = response.data
+      }
+      
+      const mappedTransactions: Transaction[] = transactionsData.map((item: any) => ({
+        id: item.id,
+        userId: item.userId,
+        userName: item.userName || item.buyerName || 'Unknown',
+        userEmail: item.userEmail || item.buyerEmail || '',
+        orderNumber: item.orderNumber || '',
+        totalAmount: item.totalAmount || 0,
+        currency: item.currency || 'USD',
+        paymentType: item.paymentType || '',
+        paymentTime: item.paymentTime || item.createdAt || '',
+        status: normalizeTransactionStatus(item.status),
+        createdAt: item.createdAt || item.paymentTime || '',
+        updatedAt: item.updatedAt || '',
+        deletedAt: item.deletedAt,
+        orderItems: item.orderItems || [],
+        totalItems: item.totalItems || 0,
+        buyerName: item.userName || item.buyerName || 'Unknown',
+      }))
+      
+      setTransactions(mappedTransactions)
+    } catch (error) {
+      console.error('Failed to load transactions:', error)
+      toast.error('Failed to load transactions')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleApproval = (transaction: Transaction, action: "approve" | "reject") => {
     setSelectedTransaction(transaction)
     setApprovalAction(action)
     setShowApprovalDialog(true)
   }
 
-  const totalRevenue = "$45,231"
-  const pendingAmount = "$3,300"
-  const completedCount = completedTransactions.length
+  const confirmApproval = async () => {
+    if (!selectedTransaction) return
+    
+    try {
+      setActionLoading(true)
+      if (approvalAction === "approve") {
+        await apiService.approvePurchaseRequest(selectedTransaction.id)
+        toast.success('Purchase request approved')
+      } else {
+        await apiService.rejectPurchaseRequest(selectedTransaction.id)
+        toast.success('Purchase request rejected')
+      }
+      setShowApprovalDialog(false)
+      await loadTransactions()
+    } catch (error) {
+      console.error(`Failed to ${approvalAction} purchase:`, error)
+      toast.error(`Failed to ${approvalAction} purchase request`)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const formatCurrency = (amount: number, currency: string = 'USD') => {
+    const currencyMap: Record<string, string> = {
+      'USD': 'en-US',
+      'VND': 'vi-VN',
+      'EUR': 'de-DE',
+      'JPY': 'ja-JP'
+    }
+    
+    const locale = currencyMap[currency] || 'en-US'
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: currency
+    }).format(amount)
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString()
+  }
+
+  const pendingTransactions = transactions.filter(t => t.status === 'Pending')
+  const completedTransactions = transactions.filter(t => t.status === 'Completed' || t.status === 'Shipped' || t.status === 'Delivered')
+
+  const totalRevenue = completedTransactions.reduce((sum, t) => sum + t.totalAmount, 0)
+  const pendingAmount = pendingTransactions.reduce((sum, t) => sum + t.totalAmount, 0)
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading transactions...</span>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -124,10 +154,8 @@ export default function TransactionManagement() {
             <DollarSign className="h-5 w-5 text-chart-1" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{totalRevenue}</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-accent">+15.3%</span> from last month
-            </p>
+            <div className="text-2xl font-bold text-foreground">{formatCurrency(totalRevenue)}</div>
+            <p className="text-xs text-muted-foreground">From completed sales</p>
           </CardContent>
         </Card>
 
@@ -137,8 +165,8 @@ export default function TransactionManagement() {
             <Clock className="h-5 w-5 text-chart-3" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{pendingAmount}</div>
-            <p className="text-xs text-muted-foreground">{pendingPurchases.length} purchase requests</p>
+            <div className="text-2xl font-bold text-foreground">{formatCurrency(pendingAmount)}</div>
+            <p className="text-xs text-muted-foreground">{pendingTransactions.length} purchase requests</p>
           </CardContent>
         </Card>
 
@@ -148,16 +176,15 @@ export default function TransactionManagement() {
             <TrendingUp className="h-5 w-5 text-chart-2" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{completedCount}</div>
-            <p className="text-xs text-muted-foreground">This month</p>
+            <div className="text-2xl font-bold text-foreground">{completedTransactions.length}</div>
+            <p className="text-xs text-muted-foreground">This period</p>
           </CardContent>
         </Card>
       </div>
 
       <Tabs defaultValue="pending" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="pending">Pending Purchases ({pendingPurchases.length})</TabsTrigger>
-          <TabsTrigger value="auctions">Active Auctions ({auctionBids.length})</TabsTrigger>
+          <TabsTrigger value="pending">Pending Purchases ({pendingTransactions.length})</TabsTrigger>
           <TabsTrigger value="completed">Completed ({completedTransactions.length})</TabsTrigger>
         </TabsList>
 
@@ -171,103 +198,64 @@ export default function TransactionManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Artwork</TableHead>
+                    <TableHead>Transaction ID</TableHead>
                     <TableHead>Buyer</TableHead>
-                    <TableHead>Seller</TableHead>
                     <TableHead>Amount</TableHead>
-                    <TableHead>Type</TableHead>
+                    <TableHead>Payment Method</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pendingPurchases.map((transaction) => (
-                    <TableRow key={transaction.id}>
-                      <TableCell className="font-medium text-foreground">{transaction.artwork}</TableCell>
-                      <TableCell className="text-muted-foreground">{transaction.buyer}</TableCell>
-                      <TableCell className="text-muted-foreground">{transaction.seller}</TableCell>
-                      <TableCell className="font-medium text-foreground">{transaction.amount}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{transaction.type}</Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{transaction.date}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setSelectedTransaction(transaction)
-                              setShowDetailsDialog(true)
-                            }}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-accent hover:text-accent"
-                            onClick={() => handleApproval(transaction, "approve")}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => handleApproval(transaction, "reject")}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="auctions" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Active Auctions</CardTitle>
-              <CardDescription>Monitor ongoing auction bids</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Artwork</TableHead>
-                    <TableHead>Current Bidder</TableHead>
-                    <TableHead>Current Bid</TableHead>
-                    <TableHead>Total Bids</TableHead>
-                    <TableHead>End Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {auctionBids.map((auction) => (
-                    <TableRow key={auction.id}>
-                      <TableCell className="font-medium text-foreground">{auction.artwork}</TableCell>
-                      <TableCell className="text-muted-foreground">{auction.bidder}</TableCell>
-                      <TableCell className="font-medium text-foreground">{auction.currentBid}</TableCell>
-                      <TableCell className="text-muted-foreground">{auction.bids}</TableCell>
-                      <TableCell className="text-muted-foreground">{auction.endDate}</TableCell>
-                      <TableCell>
-                        <Badge variant="default" className="bg-accent text-accent-foreground">
-                          {auction.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon">
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                  {pendingTransactions.length > 0 ? (
+                    pendingTransactions.map((transaction) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell className="font-medium text-foreground">#{transaction.id}</TableCell>
+                        <TableCell className="text-muted-foreground">{transaction.buyerName || transaction.userName}</TableCell>
+                        <TableCell className="font-medium text-foreground">{formatCurrency(transaction.totalAmount, transaction.currency)}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{transaction.paymentType}</Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{formatDate(transaction.createdAt)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setSelectedTransaction(transaction)
+                                setShowDetailsDialog(true)
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-accent hover:text-accent"
+                              onClick={() => handleApproval(transaction, "approve")}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => handleApproval(transaction, "reject")}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                        No pending purchase requests
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -296,45 +284,45 @@ export default function TransactionManagement() {
           <Card>
             <CardHeader>
               <CardTitle>Completed Transactions</CardTitle>
-              <CardDescription>All completed sales and auction transactions</CardDescription>
+              <CardDescription>All completed sales transactions</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Artwork</TableHead>
+                    <TableHead>Transaction ID</TableHead>
                     <TableHead>Buyer</TableHead>
-                    <TableHead>Seller</TableHead>
                     <TableHead>Amount</TableHead>
-                    <TableHead>Type</TableHead>
+                    <TableHead>Payment Method</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {completedTransactions.map((transaction) => (
-                    <TableRow key={transaction.id}>
-                      <TableCell className="font-medium text-foreground">{transaction.artwork}</TableCell>
-                      <TableCell className="text-muted-foreground">{transaction.buyer}</TableCell>
-                      <TableCell className="text-muted-foreground">{transaction.seller}</TableCell>
-                      <TableCell className="font-medium text-foreground">{transaction.amount}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{transaction.type}</Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{transaction.date}</TableCell>
-                      <TableCell>
-                        <Badge variant={transaction.status === "Completed" ? "default" : "secondary"}>
-                          {transaction.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon">
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                  {completedTransactions.length > 0 ? (
+                    completedTransactions.map((transaction) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell className="font-medium text-foreground">#{transaction.id}</TableCell>
+                        <TableCell className="text-muted-foreground">{transaction.buyerName || transaction.userName}</TableCell>
+                        <TableCell className="font-medium text-foreground">{formatCurrency(transaction.totalAmount, transaction.currency)}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{transaction.paymentType}</Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{formatDate(transaction.createdAt)}</TableCell>
+                        <TableCell>
+                          <Badge variant={transaction.status === "Completed" ? "default" : "secondary"}>
+                            {transaction.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                        No completed transactions
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -342,31 +330,36 @@ export default function TransactionManagement() {
         </TabsContent>
       </Tabs>
 
-      {/* Approval Dialog */}
       <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{approvalAction === "approve" ? "Approve" : "Reject"} Purchase Request</DialogTitle>
             <DialogDescription>
-              Are you sure you want to {approvalAction} the purchase of "{selectedTransaction?.artwork}" by{" "}
-              {selectedTransaction?.buyer}?
+              Are you sure you want to {approvalAction} transaction #{selectedTransaction?.id}?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowApprovalDialog(false)}>
+            <Button variant="outline" onClick={() => setShowApprovalDialog(false)} disabled={actionLoading}>
               Cancel
             </Button>
             <Button
               variant={approvalAction === "approve" ? "default" : "destructive"}
-              onClick={() => setShowApprovalDialog(false)}
+              onClick={confirmApproval}
+              disabled={actionLoading}
             >
-              {approvalAction === "approve" ? "Approve" : "Reject"}
+              {actionLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                approvalAction === "approve" ? "Approve" : "Reject"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Details Dialog */}
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
         <DialogContent>
           <DialogHeader>
@@ -375,32 +368,28 @@ export default function TransactionManagement() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Artwork</p>
-              <p className="text-foreground">{selectedTransaction?.artwork}</p>
+              <p className="text-sm font-medium text-muted-foreground">Transaction ID</p>
+              <p className="text-foreground">#{selectedTransaction?.id}</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Buyer</p>
-                <p className="text-foreground">{selectedTransaction?.buyer}</p>
+                <p className="text-foreground">{selectedTransaction?.buyerName}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Seller</p>
-                <p className="text-foreground">{selectedTransaction?.seller}</p>
+                <p className="text-sm font-medium text-muted-foreground">Amount</p>
+                <p className="text-foreground font-medium">{selectedTransaction && formatCurrency(selectedTransaction.totalAmount, selectedTransaction.currency)}</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Amount</p>
-                <p className="text-foreground font-medium">{selectedTransaction?.amount}</p>
+                <p className="text-sm font-medium text-muted-foreground">Payment Method</p>
+                <p className="text-foreground">{selectedTransaction?.paymentType}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Type</p>
-                <p className="text-foreground">{selectedTransaction?.type}</p>
+                <p className="text-sm font-medium text-muted-foreground">Date</p>
+                <p className="text-foreground">{selectedTransaction && formatDate(selectedTransaction.createdAt)}</p>
               </div>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Date</p>
-              <p className="text-foreground">{selectedTransaction?.date}</p>
             </div>
           </div>
           <DialogFooter>

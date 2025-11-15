@@ -1,10 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import Link from "next/link"
 import Image from "next/image"
-import { Heart, Trash2 } from "lucide-react"
+import { Heart, Trash2 } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Header } from "@/components/header"
@@ -12,6 +12,7 @@ import { Footer } from "@/components/footer"
 import { apiClient } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { useToast } from "@/hooks/use-toast"
+import { getImageUrl } from "@/lib/utils"
 
 export default function FavoritesPage() {
   const router = useRouter()
@@ -107,7 +108,7 @@ export default function FavoritesPage() {
                     <Link href={`/artworks/${favorite.artworkId}`}>
                       <div className="aspect-square relative overflow-hidden bg-muted">
                         <Image
-                          src={favorite.artwork?.primaryImage || "/placeholder.svg?height=400&width=400"}
+                          src={getImageUrl(favorite.artwork?.primaryImage) || "/placeholder.svg"}
                           alt={favorite.artwork?.title || "Artwork"}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"

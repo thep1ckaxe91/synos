@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"
 
 export interface ApiError {
   message: string
@@ -87,7 +87,7 @@ export class ApiClient {
 
   // Auth endpoints
   async login(email: string, password: string): Promise<AuthResultDto> {
-    const response = await this.request<AuthResultDto>("/auth/login", {
+    const response = await this.request<AuthResultDto>("/members/login", {
       method: "POST",
       body: JSON.stringify({ email, password } as MemberLoginDto),
     })
@@ -98,7 +98,7 @@ export class ApiClient {
   }
 
   async register(data: MemberRegisterDto): Promise<AuthResultDto> {
-    const response = await this.request<AuthResultDto>("/auth/register", {
+    const response = await this.request<AuthResultDto>("/members/register", {
       method: "POST",
       body: JSON.stringify(data),
     })
@@ -242,7 +242,7 @@ export class ApiClient {
   }
 
   async getSalesHistory(): Promise<SalesHistoryDto[]> {
-    return this.request<SalesHistoryDto[]>("/seller/sales", { method: "GET" })
+    return this.request<SalesHistoryDto[]>("/seller/sales-history", { method: "GET" })
   }
 
   async createAuction(data: CreateAuctionDto): Promise<AuctionResponseDto> {
@@ -254,6 +254,79 @@ export class ApiClient {
 
   async getSellerAuctions(): Promise<AuctionResponseDto[]> {
     return this.request<AuctionResponseDto[]>("/seller/auctions", { method: "GET" })
+  }
+
+  // Additional guest endpoints
+  async getFeaturedArtworks(count = 10): Promise<GuestArtworkDto[]> {
+    return this.request<GuestArtworkDto[]>(`/guest/artworks/featured?count=${count}`, { method: "GET" })
+  }
+
+  async getRecentArtworks(count = 10): Promise<GuestArtworkDto[]> {
+    return this.request<GuestArtworkDto[]>(`/guest/artworks/recent?count=${count}`, { method: "GET" })
+  }
+
+  async getRelatedArtworks(artworkId: number, count = 5): Promise<GuestArtworkDto[]> {
+    return this.request<GuestArtworkDto[]>(`/guest/artworks/${artworkId}/related?count=${count}`, { method: "GET" })
+  }
+
+  async getUpcomingExhibitions(): Promise<GuestExhibitionDto[]> {
+    return this.request<GuestExhibitionDto[]>("/guest/exhibitions/upcoming", { method: "GET" })
+  }
+
+  async getPastExhibitions(): Promise<GuestExhibitionDto[]> {
+    return this.request<GuestExhibitionDto[]>("/guest/exhibitions/past", { method: "GET" })
+  }
+
+  async getExhibitionArtworks(exhibitionId: number): Promise<GuestArtworkDto[]> {
+    return this.request<GuestArtworkDto[]>(`/guest/exhibitions/${exhibitionId}/artworks`, { method: "GET" })
+  }
+
+  async getApplicationInfo(): Promise<any> {
+    return this.request<any>("/guest/info", { method: "GET" })
+  }
+
+  // New endpoints
+  async initiatePayment(orderId: number): Promise<{ paymentUrl: string }> {
+    return this.request<{ paymentUrl: string }>(`/buyer/orders/${orderId}/pay`, {
+      method: "POST",
+    })
+  }
+
+  async uploadArtworkImages(files: File[]): Promise<{ urls: string[] }> {
+    const formData = new FormData()
+    files.forEach((file) => {
+      formData.append("files", file)
+    })
+
+    const response = await fetch(`${this.baseUrl}/seller/artworks/upload`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+      },
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new Error("Failed to upload images")
+    }
+
+    return response.json()
+  }
+
+  async createArtworkWithFiles(formData: FormData): Promise<SellerArtworkDto> {
+    const response = await fetch(`${this.baseUrl}/seller/artworks`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+      },
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new Error("Failed to create artwork")
+    }
+
+    return response.json()
   }
 }
 

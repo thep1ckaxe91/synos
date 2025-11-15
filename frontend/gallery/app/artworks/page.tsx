@@ -3,16 +3,21 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Filter, Grid3x3, LayoutGrid } from "lucide-react"
+import { Filter, Grid3x3, LayoutGrid, ShoppingCart } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { apiClient } from "@/lib/api"
+import { getImageUrl, formatPrice } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
+import { useCart } from "@/contexts/cart-context"
+import { useAuth } from "@/contexts/auth-context"
+import { useToast } from "@/hooks/use-toast"
+import { useRouter } from 'next/navigation'
 
 export default function ArtworksPage() {
   const [artworks, setArtworks] = useState<any[]>([])
@@ -22,6 +27,10 @@ export default function ArtworksPage() {
   const [sortBy, setSortBy] = useState<string>("recent")
   const [priceRange, setPriceRange] = useState([0, 10000])
   const [gridView, setGridView] = useState<"grid" | "masonry">("grid")
+  const { addItem } = useCart()
+  const { isAuthenticated, user } = useAuth()
+  const { toast } = useToast()
+  const router = useRouter()
 
   useEffect(() => {
     loadData()
@@ -74,6 +83,45 @@ export default function ArtworksPage() {
       if (sortBy === "title") return a.title.localeCompare(b.title)
       return 0
     })
+
+  const handleAddToCart = (artwork: any, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!isAuthenticated) {
+      router.push("/login")
+      return
+    }
+
+    if (user?.role === 'Seller') {
+      toast({
+        title: "Not available",
+        description: "Sellers cannot purchase artworks. Switch to a buyer account to make purchases.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (artwork.saleType !== "FixedPrice" && artwork.artworkFor !== "Fixed") {
+      toast({
+        title: "Not available",
+        description: "This artwork is only available through auction",
+        variant: "destructive",
+      })
+      return
+    }
+
+    addItem({
+      artworkId: artwork.id,
+      title: artwork.title,
+      artistName: artwork.sellerName || artwork.artistName,
+      price: artwork.price,
+      currency: artwork.currency || "USD", // default to USD instead of VND
+      primaryImage: getImageUrl(artwork.images?.[0]?.imageUrl || artwork.primaryImage),
+    })
+
+    toast({ title: "Added to cart" })
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -270,7 +318,7 @@ export default function ArtworksPage() {
                             }`}
                           >
                             <Image
-                              src={artwork.primaryImage || "/placeholder.svg?height=600&width=450"}
+                              src={getImageUrl(artwork.images?.[0]?.imageUrl || artwork.primaryImage)}
                               alt={artwork.title}
                               fill
                               className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -280,13 +328,25 @@ export default function ArtworksPage() {
                             <h3 className="font-medium mb-1 group-hover:text-accent transition-colors line-clamp-1">
                               {artwork.title}
                             </h3>
-                            <p className="text-sm text-muted-foreground mb-2">{artwork.artistName}</p>
-                            <div className="flex items-center justify-between">
+                            <p className="text-sm text-muted-foreground mb-2">{artwork.sellerName || artwork.artistName}</p>
+                            <div className="flex items-center justify-between mb-3">
                               <span className="font-semibold">
-                                {artwork.currency} {artwork.price?.toLocaleString()}
+                                {formatPrice(artwork.price, artwork.currency || "USD")} {/* default to USD */}
                               </span>
-                              <span className="text-xs text-muted-foreground uppercase">{artwork.saleType}</span>
+                              <span className="text-xs text-muted-foreground uppercase">
+                                {artwork.saleType || artwork.artworkFor}
+                              </span>
                             </div>
+                            {(artwork.saleType === "FixedPrice" || artwork.artworkFor === "Fixed") && artwork.status === "Available" && user?.role !== 'Seller' && (
+                              <Button
+                                size="sm"
+                                className="w-full"
+                                onClick={(e) => handleAddToCart(artwork, e)}
+                              >
+                                <ShoppingCart className="mr-2 h-4 w-4" />
+                                Add to Cart
+                              </Button>
+                            )}
                           </CardContent>
                         </Card>
                       </Link>
