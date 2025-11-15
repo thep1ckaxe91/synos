@@ -1,95 +1,67 @@
-import Link from "next/link"
+import Link from 'next/link';
 
 export function Footer() {
   return (
-    <footer className="border-t border-border/40 bg-muted/40">
-      <div className="container px-4 py-12">
+    <footer className="bg-muted/30 border-t border-border mt-auto">
+      <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="font-serif text-2xl font-bold mb-4">SYNOS</h3>
+            <h3 className="font-serif text-xl mb-4">Synos</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Connecting artists, collectors, and art enthusiasts through a comprehensive online gallery platform.
+              A comprehensive art gallery and auction platform connecting artists, collectors, and art enthusiasts.
             </p>
           </div>
-
+          
           <div>
-            <h4 className="font-semibold mb-4">Explore</h4>
-            <ul className="space-y-2 text-sm">
+            <h4 className="font-medium mb-4">Explore</h4>
+            <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <Link href="/artworks" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/artworks" className="hover:text-primary transition-colors">
                   Browse Artworks
                 </Link>
               </li>
               <li>
-                <Link href="/auctions" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Active Auctions
-                </Link>
-              </li>
-              <li>
-                <Link href="/exhibitions" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/exhibitions" className="hover:text-primary transition-colors">
                   Exhibitions
                 </Link>
               </li>
               <li>
-                <Link href="/categories" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Categories
+                <Link href="/auctions" className="hover:text-primary transition-colors">
+                  Active Auctions
                 </Link>
               </li>
             </ul>
           </div>
-
+          
           <div>
-            <h4 className="font-semibold mb-4">Company</h4>
-            <ul className="space-y-2 text-sm">
+            <h4 className="font-medium mb-4">About</h4>
+            <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <Link href="/about" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/about" className="hover:text-primary transition-colors">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/contact" className="hover:text-primary transition-colors">
                   Contact
                 </Link>
               </li>
-              <li>
-                <Link href="/artists" className="text-muted-foreground hover:text-foreground transition-colors">
-                  For Artists
-                </Link>
-              </li>
             </ul>
           </div>
-
+          
           <div>
-            <h4 className="font-semibold mb-4">Support</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/faq" className="text-muted-foreground hover:text-foreground transition-colors">
-                  FAQ
-                </Link>
-              </li>
-              <li>
-                <Link href="/shipping" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Shipping
-                </Link>
-              </li>
-              <li>
-                <Link href="/returns" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Returns
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Privacy Policy
-                </Link>
-              </li>
+            <h4 className="font-medium mb-4">Contact</h4>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li>info@synos.art</li>
+              <li>Vietnam</li>
             </ul>
           </div>
         </div>
-
-        <div className="mt-12 pt-8 border-t border-border/40 text-center text-sm text-muted-foreground">
+        
+        <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} Synos Art Gallery. All rights reserved.</p>
         </div>
       </div>
     </footer>
-  )
+  );
 }

@@ -1,35 +1,36 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { Playfair_Display, Inter } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
-import { AuthProvider } from "@/contexts/auth-context"
-import { CartProvider } from "@/contexts/cart-context"
-import { Toaster } from "@/components/ui/toaster"
-import "./globals.css"
+import type { Metadata } from 'next'
+import { Geist, Geist_Mono, Playfair_Display } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
+import './globals.css'
+import { AuthProvider } from '@/contexts/auth-context'
+import { NavBar } from '@/components/nav-bar'
+import { Footer } from '@/components/footer'
+import { Toaster } from '@/components/ui/toaster'
 
-const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-serif" })
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
+const geist = Geist({ subsets: ["latin"], variable: '--font-sans' });
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: '--font-mono' });
+const playfair = Playfair_Display({ subsets: ["latin"], variable: '--font-serif' });
 
 export const metadata: Metadata = {
-  title: "Synos Art Gallery - Discover Fine Art Online",
-  description: "Browse, collect, and auction fine art from artists around the world",
-  generator: "v0.app",
+  title: 'Synos Art Gallery - Discover Exceptional Art',
+  description: 'A comprehensive art gallery and auction platform connecting artists, collectors, and art enthusiasts worldwide.',
+  generator: 'v0.app',
   icons: {
     icon: [
       {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
+        url: '/icon-light-32x32.png',
+        media: '(prefers-color-scheme: light)',
       },
       {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
+        url: '/icon-dark-32x32.png',
+        media: '(prefers-color-scheme: dark)',
       },
       {
-        url: "/icon.svg",
-        type: "image/svg+xml",
+        url: '/icon.svg',
+        type: 'image/svg+xml',
       },
     ],
-    apple: "/apple-icon.png",
+    apple: '/apple-icon.png',
   },
 }
 
@@ -40,12 +41,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${playfair.variable} font-sans antialiased`}>
+      <body className={`${geist.variable} ${geistMono.variable} ${playfair.variable} font-sans antialiased min-h-screen flex flex-col`}>
         <AuthProvider>
-          <CartProvider>
+          <NavBar />
+          <main className="flex-1 pt-16">
             {children}
-            <Toaster />
-          </CartProvider>
+          </main>
+          <Footer />
+          <Toaster />
         </AuthProvider>
         <Analytics />
       </body>

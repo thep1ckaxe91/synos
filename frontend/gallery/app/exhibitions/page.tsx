@@ -1,163 +1,186 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { Calendar } from "lucide-react"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { apiClient } from "@/lib/api"
-import { getImageUrl } from "@/lib/utils"
-import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useState, useEffect } from 'react';
+import { apiClient } from '@/lib/api-client';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Calendar, MapPin } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
 
 export default function ExhibitionsPage() {
-  const [activeExhibitions, setActiveExhibitions] = useState<any[]>([])
-  const [upcomingExhibitions, setUpcomingExhibitions] = useState<any[]>([])
-  const [pastExhibitions, setPastExhibitions] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [activeExhibitions, setActiveExhibitions] = useState<any[]>([]);
+  const [upcomingExhibitions, setUpcomingExhibitions] = useState<any[]>([]);
+  const [pastExhibitions, setPastExhibitions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadExhibitions()
-  }, [])
+    loadExhibitions();
+  }, []);
 
   const loadExhibitions = async () => {
     try {
+      setIsLoading(true);
       const [active, upcoming, past] = await Promise.all([
-        apiClient.getActiveExhibitions(),
-        apiClient.getUpcomingExhibitions(),
-        apiClient.getPastExhibitions(),
-      ])
-      setActiveExhibitions(active)
-      setUpcomingExhibitions(upcoming)
-      setPastExhibitions(past)
+        apiClient.guest.getActiveExhibitions(),
+        apiClient.guest.getUpcomingExhibitions(),
+        apiClient.guest.getPastExhibitions(),
+      ]);
+      setActiveExhibitions(active);
+      setUpcomingExhibitions(upcoming);
+      setPastExhibitions(past);
     } catch (error) {
-      console.error("Failed to load exhibitions:", error)
+      console.error('Failed to load exhibitions:', error);
     } finally {
-      setLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-  const ExhibitionGrid = ({ exhibitions }: { exhibitions: any[] }) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {exhibitions.length === 0 ? (
-        <div className="col-span-full text-center py-12">
-          <p className="text-muted-foreground">No exhibitions in this category.</p>
+  const ExhibitionCard = ({ exhibition }: { exhibition: any }) => (
+    <Link href={`/exhibitions/${exhibition.id}`}>
+      <Card className="group hover:shadow-lg transition-shadow cursor-pointer">
+        <div className="relative aspect-video overflow-hidden bg-muted">
+          <Image
+            src={exhibition.imageUrl || `/placeholder.svg?height=400&width=600&query=${encodeURIComponent(exhibition.name)}`}
+            alt={exhibition.name}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+          {exhibition.isFeatured && (
+            <Badge className="absolute top-3 left-3">Featured</Badge>
+          )}
         </div>
-      ) : (
-        exhibitions.map((exhibition) => (
-          <Link key={exhibition.id} href={`/exhibitions/${exhibition.id}`}>
-            <Card className="overflow-hidden group hover:shadow-lg transition-shadow duration-300">
-              <div className="aspect-[4/3] relative overflow-hidden bg-muted">
-                <Image
-                  src={getImageUrl(exhibition.featuredArtworks?.[0]?.images?.[0]?.imageUrl)}
-                  alt={exhibition.title}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                />
+        <CardContent className="p-6 space-y-3">
+          <h3 className="font-medium text-xl line-clamp-2">{exhibition.name}</h3>
+          
+          {exhibition.description && (
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {exhibition.description}
+            </p>
+          )}
+
+          <div className="space-y-2 pt-2">
+            {exhibition.location && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <MapPin className="h-4 w-4" />
+                {exhibition.location}
               </div>
-              <CardContent className="p-6">
-                <h3 className="font-serif text-xl font-semibold mb-2 group-hover:text-accent transition-colors">
-                  {exhibition.title}
-                </h3>
-                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{exhibition.description}</p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Calendar className="h-3 w-3" />
-                  <span>
-                    {new Date(exhibition.startDate).toLocaleDateString()} -{" "}
-                    {new Date(exhibition.endDate).toLocaleDateString()}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))
-      )}
+            )}
+            
+            {(exhibition.startDate || exhibition.endDate) && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                {exhibition.startDate && new Date(exhibition.startDate).toLocaleDateString()}
+                {exhibition.endDate && ` - ${new Date(exhibition.endDate).toLocaleDateString()}`}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+
+  const LoadingSkeleton = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {[...Array(6)].map((_, i) => (
+        <Card key={i}>
+          <Skeleton className="aspect-video w-full" />
+          <CardContent className="p-6">
+            <Skeleton className="h-6 w-3/4 mb-2" />
+            <Skeleton className="h-4 w-full mb-4" />
+            <Skeleton className="h-4 w-1/2" />
+          </CardContent>
+        </Card>
+      ))}
     </div>
-  )
+  );
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
+    <div className="min-h-screen py-12">
+      <div className="container mx-auto px-4">
+        <div className="mb-12">
+          <h1 className="font-serif text-4xl md:text-5xl mb-4">Art Exhibitions</h1>
+          <p className="text-lg text-muted-foreground">
+            Discover curated collections and immersive art experiences
+          </p>
+        </div>
 
-      <main className="flex-1">
-        <section className="bg-muted/30 py-16">
-          <div className="container px-4">
-            <h1 className="font-serif text-5xl md:text-6xl font-bold mb-4">Exhibitions</h1>
-            <p className="text-lg text-muted-foreground max-w-2xl">
-              Discover curated art exhibitions featuring works from contemporary artists.
-            </p>
-          </div>
-        </section>
+        <Tabs defaultValue="active" className="space-y-8">
+          <TabsList>
+            <TabsTrigger value="active">
+              Current ({activeExhibitions.length})
+            </TabsTrigger>
+            <TabsTrigger value="upcoming">
+              Upcoming ({upcomingExhibitions.length})
+            </TabsTrigger>
+            <TabsTrigger value="past">
+              Past ({pastExhibitions.length})
+            </TabsTrigger>
+          </TabsList>
 
-        <section className="py-12">
-          <div className="container px-4">
-            <Tabs defaultValue="active" className="w-full">
-              <TabsList className="grid w-full max-w-md grid-cols-3 mb-8">
-                <TabsTrigger value="active">Active</TabsTrigger>
-                <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-                <TabsTrigger value="past">Past</TabsTrigger>
-              </TabsList>
+          <TabsContent value="active">
+            {isLoading ? (
+              <LoadingSkeleton />
+            ) : activeExhibitions.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {activeExhibitions.map((exhibition) => (
+                  <ExhibitionCard key={exhibition.id} exhibition={exhibition} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-xl font-medium mb-2">No active exhibitions</h3>
+                <p className="text-muted-foreground">
+                  Check back soon for new exhibitions
+                </p>
+              </div>
+            )}
+          </TabsContent>
 
-              <TabsContent value="active">
-                {loading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[...Array(3)].map((_, i) => (
-                      <Card key={i} className="overflow-hidden">
-                        <div className="aspect-[4/3] bg-muted animate-pulse" />
-                        <CardContent className="p-6">
-                          <div className="h-6 bg-muted animate-pulse rounded mb-2" />
-                          <div className="h-4 bg-muted animate-pulse rounded" />
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <ExhibitionGrid exhibitions={activeExhibitions} />
-                )}
-              </TabsContent>
+          <TabsContent value="upcoming">
+            {isLoading ? (
+              <LoadingSkeleton />
+            ) : upcomingExhibitions.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {upcomingExhibitions.map((exhibition) => (
+                  <ExhibitionCard key={exhibition.id} exhibition={exhibition} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-xl font-medium mb-2">No upcoming exhibitions</h3>
+                <p className="text-muted-foreground">
+                  Stay tuned for future exhibitions
+                </p>
+              </div>
+            )}
+          </TabsContent>
 
-              <TabsContent value="upcoming">
-                {loading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[...Array(3)].map((_, i) => (
-                      <Card key={i} className="overflow-hidden">
-                        <div className="aspect-[4/3] bg-muted animate-pulse" />
-                        <CardContent className="p-6">
-                          <div className="h-6 bg-muted animate-pulse rounded mb-2" />
-                          <div className="h-4 bg-muted animate-pulse rounded" />
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <ExhibitionGrid exhibitions={upcomingExhibitions} />
-                )}
-              </TabsContent>
-
-              <TabsContent value="past">
-                {loading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[...Array(3)].map((_, i) => (
-                      <Card key={i} className="overflow-hidden">
-                        <div className="aspect-[4/3] bg-muted animate-pulse" />
-                        <CardContent className="p-6">
-                          <div className="h-6 bg-muted animate-pulse rounded mb-2" />
-                          <div className="h-4 bg-muted animate-pulse rounded" />
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <ExhibitionGrid exhibitions={pastExhibitions} />
-                )}
-              </TabsContent>
-            </Tabs>
-          </div>
-        </section>
-      </main>
-
-      <Footer />
+          <TabsContent value="past">
+            {isLoading ? (
+              <LoadingSkeleton />
+            ) : pastExhibitions.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {pastExhibitions.map((exhibition) => (
+                  <ExhibitionCard key={exhibition.id} exhibition={exhibition} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-xl font-medium mb-2">No past exhibitions</h3>
+                <p className="text-muted-foreground">
+                  Past exhibitions will be archived here
+                </p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
-  )
+  );
 }

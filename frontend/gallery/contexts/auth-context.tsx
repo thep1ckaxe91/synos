@@ -1,73 +1,123 @@
-"use client"
+'use client';
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { apiClient } from "@/lib/api"
-import type { MemberDto, MemberRegisterDto } from "@/lib/types"
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { apiClient } from '@/lib/api-client';
 
-interface AuthContextType {
-  user: MemberDto | null
-  loading: boolean
-  login: (email: string, password: string) => Promise<void>
-  register: (data: MemberRegisterDto) => Promise<void>
-  logout: () => Promise<void>
-  isAuthenticated: boolean
+interface User {
+  id: number;
+  email: string;
+  name: string;
+  role: string;
+  age?: number;
+  bio?: string;
+  interests?: string;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+interface AuthContextType {
+  user: User | null;
+  token: string | null;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (data: any) => Promise<void>;
+  logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<MemberDto | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    checkAuth()
-  }, [])
-
-  const checkAuth = async () => {
-    try {
-      const token = apiClient.getToken()
-      if (token) {
-        const currentUser = await apiClient.getCurrentUser()
-        setUser(currentUser)
-      }
-    } catch (error) {
-      console.error("Auth check failed:", error)
-      apiClient.setToken(null)
-    } finally {
-      setLoading(false)
+    // Load token from localStorage on mount
+    const storedToken = localStorage.getItem('auth_token');
+    if (storedToken) {
+      setToken(storedToken);
+      loadUser(storedToken);
+    } else {
+      setIsLoading(false);
     }
-  }
+  }, []);
+
+  const loadUser = async (authToken: string) => {
+    try {
+      const userData = await apiClient.auth.getMe(authToken);
+      setUser(userData);
+    } catch (error) {
+      console.error('Failed to load user:', error);
+      // Clear invalid token
+      localStorage.removeItem('auth_token');
+      setToken(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const login = async (email: string, password: string) => {
-    const response = await apiClient.login(email, password)
-    if (response.member) {
-      setUser(response.member)
+    try {
+      const response = await apiClient.auth.login({ email, password });
+      
+      if (response.success && response.token) {
+        setToken(response.token);
+        setUser(response.member);
+        localStorage.setItem('auth_token', response.token);
+      } else {
+        throw new Error(response.message || 'Login failed');
+      }
+    } catch (error) {
+      throw error;
     }
-  }
+  };
 
-  const register = async (data: MemberRegisterDto) => {
-    const response = await apiClient.register(data)
-    if (response.member) {
-      setUser(response.member)
+  const register = async (data: any) => {
+    try {
+      const response = await apiClient.auth.register(data);
+      
+      if (response.success && response.token) {
+        setToken(response.token);
+        setUser(response.member);
+        localStorage.setItem('auth_token', response.token);
+      } else {
+        throw new Error(response.message || 'Registration failed');
+      }
+    } catch (error) {
+      throw error;
     }
-  }
+  };
 
   const logout = async () => {
-    await apiClient.logout()
-    setUser(null)
-  }
+    try {
+      if (user?.id && token) {
+        await apiClient.auth.logout(user.id, token);
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem('auth_token');
+    }
+  };
+
+  const refreshUser = async () => {
+    if (token) {
+      await loadUser(token);
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
+    throw new Error('useAuth must be used within an AuthProvider');
   }
-  return context
+  return context;
 }
