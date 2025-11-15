@@ -87,7 +87,7 @@ export class ApiClient {
 
   // Auth endpoints
   async login(email: string, password: string): Promise<AuthResultDto> {
-    const response = await this.request<AuthResultDto>("/auth/login", {
+    const response = await this.request<AuthResultDto>("/members/login", {
       method: "POST",
       body: JSON.stringify({ email, password } as MemberLoginDto),
     })
@@ -98,7 +98,7 @@ export class ApiClient {
   }
 
   async register(data: MemberRegisterDto): Promise<AuthResultDto> {
-    const response = await this.request<AuthResultDto>("/auth/register", {
+    const response = await this.request<AuthResultDto>("/members/register", {
       method: "POST",
       body: JSON.stringify(data),
     })

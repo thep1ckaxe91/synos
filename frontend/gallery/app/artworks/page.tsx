@@ -270,7 +270,7 @@ export default function ArtworksPage() {
                             }`}
                           >
                             <Image
-                              src={artwork.primaryImage || "/placeholder.svg?height=600&width=450"}
+                              src={artwork.images?.[0]?.imageUrl || "/placeholder.svg?height=600&width=450"}
                               alt={artwork.title}
                               fill
                               className="object-cover group-hover:scale-105 transition-transform duration-300"
