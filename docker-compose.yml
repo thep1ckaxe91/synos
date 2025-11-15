@@ -31,15 +31,15 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=mysql;Database=synos_db;User Id=synos_user;Password=synos_password;Port=3306;
-  frontend-admin:
-    build:
-      context: ./frontend/admin
-      dockerfile: Dockerfile
-    container_name: synos_frontend_admin
-    ports:
-      - "3000:3000" # Next.js admin app
-    depends_on:
-      - backend
+  # frontend-admin:
+  #   build:
+  #     context: ./frontend/admin
+  #     dockerfile: Dockerfile
+  #   container_name: synos_frontend_admin
+  #   ports:
+  #     - "3000:3000" # Next.js admin app
+  #   depends_on:
+  #     - backend
 
   frontend-gallery:
     build:

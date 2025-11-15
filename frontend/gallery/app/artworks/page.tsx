@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { apiClient } from "@/lib/api"
+import { getImageUrl } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Label } from "@/components/ui/label"
@@ -270,7 +271,7 @@ export default function ArtworksPage() {
                             }`}
                           >
                             <Image
-                              src={artwork.images?.[0]?.imageUrl || "/placeholder.svg?height=600&width=450"}
+                              src={getImageUrl(artwork.images?.[0]?.imageUrl || artwork.primaryImage)}
                               alt={artwork.title}
                               fill
                               className="object-cover group-hover:scale-105 transition-transform duration-300"

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,31 +15,71 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Search, Check, X, Eye, UserCog } from "lucide-react"
+import { Search, Check, X, Eye, UserCog, Loader2 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-
-// Mock data
-const pendingUsers = [
-  { id: 1, name: "John Smith", email: "john@example.com", type: "Artist", date: "2025-01-08" },
-  { id: 2, name: "Sarah Johnson", email: "sarah@example.com", type: "Buyer", date: "2025-01-08" },
-  { id: 3, name: "Michael Chen", email: "michael@example.com", type: "Artist", date: "2025-01-07" },
-]
-
-const activeUsers = [
-  { id: 4, name: "Emma Wilson", email: "emma@example.com", type: "Artist", status: "Active", joined: "2024-12-15" },
-  { id: 5, name: "David Brown", email: "david@example.com", type: "Buyer", status: "Active", joined: "2024-12-10" },
-  { id: 6, name: "Lisa Anderson", email: "lisa@example.com", type: "Artist", status: "Active", joined: "2024-11-28" },
-]
+import { apiService } from "@/lib/api-service"
+import { Member } from "@/lib/types"
+import { toast } from "sonner"
 
 export default function UserManagement() {
-  const [selectedUser, setSelectedUser] = useState<any>(null)
+  const [selectedUser, setSelectedUser] = useState<Member | null>(null)
   const [showApprovalDialog, setShowApprovalDialog] = useState(false)
   const [approvalAction, setApprovalAction] = useState<"approve" | "reject">("approve")
+  
+  // Data state
+  const [members, setMembers] = useState<Member[]>([])
+  const [loading, setLoading] = useState(true)
+  
+  // Filters
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedRole, setSelectedRole] = useState("all")
 
-  const handleApproval = (user: any, action: "approve" | "reject") => {
+  useEffect(() => {
+    loadMembers()
+  }, [])
+
+  const loadMembers = async () => {
+    try {
+      setLoading(true)
+      const response = await apiService.getMembers({ skip: 0, take: 100 })
+      setMembers(response.items || [])
+    } catch (error) {
+      console.error('Failed to load members:', error)
+      toast.error('Failed to load members')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleApproval = (user: Member, action: "approve" | "reject") => {
     setSelectedUser(user)
     setApprovalAction(action)
     setShowApprovalDialog(true)
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString()
+  }
+
+  // Filter members
+  const filteredMembers = members.filter(member => {
+    const matchesSearch = member.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         member.email.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesRole = selectedRole === 'all' || member.role === selectedRole
+    return matchesSearch && matchesRole
+  })
+
+  const activeMembers = filteredMembers.filter(member => member.isActive)
+  const inactiveMembers = filteredMembers.filter(member => !member.isActive)
+  const pendingUsers = members.filter(member => member.status === 'Pending')
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading members...</span>
+      </div>
+    )
   }
 
   return (
@@ -51,8 +91,8 @@ export default function UserManagement() {
 
       <Tabs defaultValue="pending" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="pending">Pending Approvals ({pendingUsers.length})</TabsTrigger>
-          <TabsTrigger value="active">Active Users ({activeUsers.length})</TabsTrigger>
+          <TabsTrigger value="pending">Inactive Members ({inactiveMembers.length})</TabsTrigger>
+          <TabsTrigger value="active">Active Members ({activeMembers.length})</TabsTrigger>
           <TabsTrigger value="all">All Users</TabsTrigger>
         </TabsList>
 

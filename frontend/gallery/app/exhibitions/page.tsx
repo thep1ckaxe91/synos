@@ -7,6 +7,7 @@ import { Calendar } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { apiClient } from "@/lib/api"
+import { getImageUrl } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -24,8 +25,8 @@ export default function ExhibitionsPage() {
     try {
       const [active, upcoming, past] = await Promise.all([
         apiClient.getActiveExhibitions(),
-        apiClient.request<any[]>("/guest/exhibitions/upcoming", { method: "GET" }),
-        apiClient.request<any[]>("/guest/exhibitions/past", { method: "GET" }),
+        apiClient.getUpcomingExhibitions(),
+        apiClient.getPastExhibitions(),
       ])
       setActiveExhibitions(active)
       setUpcomingExhibitions(upcoming)
@@ -49,7 +50,7 @@ export default function ExhibitionsPage() {
             <Card className="overflow-hidden group hover:shadow-lg transition-shadow duration-300">
               <div className="aspect-[4/3] relative overflow-hidden bg-muted">
                 <Image
-                  src={exhibition.imageUrl || "/placeholder.svg?height=400&width=600"}
+                  src={getImageUrl(exhibition.featuredArtworks?.[0]?.images?.[0]?.imageUrl)}
                   alt={exhibition.title}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-300"

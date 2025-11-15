@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { apiClient } from "@/lib/api"
+import { getImageUrl } from "@/lib/utils"
 import type { GuestArtworkDto, GuestExhibitionDto } from "@/lib/types"
 
 export default function HomePage() {
@@ -105,9 +106,7 @@ export default function HomePage() {
                     <Card className="overflow-hidden group hover:shadow-lg transition-shadow duration-300">
                       <div className="aspect-[3/4] relative overflow-hidden bg-muted">
                         <Image
-                          src={
-                            artwork.images[0]?.imageUrl || "/placeholder.svg?height=600&width=450&query=abstract art"
-                          }
+                          src={getImageUrl(artwork.images[0]?.imageUrl)}
                           alt={artwork.title}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -234,7 +233,7 @@ export default function HomePage() {
                     <Card className="overflow-hidden group hover:shadow-lg transition-shadow duration-300">
                       <div className="aspect-square relative overflow-hidden bg-muted">
                         <Image
-                          src={artwork.images[0]?.imageUrl || "/placeholder.svg?height=400&width=400&query=modern art"}
+                          src={getImageUrl(artwork.images[0]?.imageUrl)}
                           alt={artwork.title}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
