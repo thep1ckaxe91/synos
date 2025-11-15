@@ -1,9 +1,9 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import Link from "next/link"
 import Image from "next/image"
-import { Trash2, ShoppingBag, Minus, Plus } from "lucide-react"
+import { Trash2, ShoppingBag, Minus, Plus } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Header } from "@/components/header"
@@ -11,6 +11,7 @@ import { Footer } from "@/components/footer"
 import { useCart } from "@/contexts/cart-context"
 import { useAuth } from "@/contexts/auth-context"
 import { Separator } from "@/components/ui/separator"
+import { getImageUrl, formatPrice } from "@/lib/utils"
 
 export default function CartPage() {
   const router = useRouter()
@@ -24,6 +25,9 @@ export default function CartPage() {
     }
     router.push("/checkout")
   }
+
+  // Get the first item's currency for the total (assuming all items use same currency)
+  const currency = items[0]?.currency || "USD"
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -63,7 +67,7 @@ export default function CartPage() {
                           <Link href={`/artworks/${item.artworkId}`}>
                             <div className="h-24 w-24 relative overflow-hidden rounded-md bg-muted shrink-0">
                               <Image
-                                src={item.primaryImage || "/placeholder.svg?height=96&width=96"}
+                                src={getImageUrl(item.primaryImage) || "/placeholder.svg"}
                                 alt={item.title}
                                 fill
                                 className="object-cover"
@@ -102,10 +106,10 @@ export default function CartPage() {
 
                               <div className="text-right">
                                 <p className="font-semibold">
-                                  {item.currency} {(item.price * item.quantity).toLocaleString()}
+                                  {formatPrice(item.price * item.quantity, item.currency)}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                  {item.currency} {item.price.toLocaleString()} each
+                                  {formatPrice(item.price, item.currency)} each
                                 </p>
                               </div>
                             </div>
@@ -138,7 +142,7 @@ export default function CartPage() {
                       <div className="space-y-3 mb-4">
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Subtotal</span>
-                          <span className="font-medium">${totalPrice.toLocaleString()}</span>
+                          <span className="font-medium">{formatPrice(totalPrice, currency)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Shipping</span>
@@ -154,7 +158,7 @@ export default function CartPage() {
 
                       <div className="flex justify-between mb-6">
                         <span className="font-semibold">Total</span>
-                        <span className="text-2xl font-bold">${totalPrice.toLocaleString()}</span>
+                        <span className="text-2xl font-bold">{formatPrice(totalPrice, currency)}</span>
                       </div>
 
                       <Button size="lg" className="w-full" onClick={handleCheckout}>

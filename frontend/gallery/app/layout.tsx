@@ -1,7 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Playfair_Display, Inter } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
+import { Playfair_Display, Inter } from 'next/font/google'
 import { AuthProvider } from "@/contexts/auth-context"
 import { CartProvider } from "@/contexts/cart-context"
 import { Toaster } from "@/components/ui/toaster"
@@ -13,7 +12,6 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 export const metadata: Metadata = {
   title: "Synos Art Gallery - Discover Fine Art Online",
   description: "Browse, collect, and auction fine art from artists around the world",
-  generator: "v0.app",
   icons: {
     icon: [
       {
@@ -25,8 +23,8 @@ export const metadata: Metadata = {
         media: "(prefers-color-scheme: dark)",
       },
       {
-        url: "/icon.svg",
-        type: "image/svg+xml",
+        url: "/icon.png",
+        type: "image/png+xml",
       },
     ],
     apple: "/apple-icon.png",
@@ -47,7 +45,6 @@ export default function RootLayout({
             <Toaster />
           </CartProvider>
         </AuthProvider>
-        <Analytics />
       </body>
     </html>
   )

@@ -242,7 +242,7 @@ export class ApiClient {
   }
 
   async getSalesHistory(): Promise<SalesHistoryDto[]> {
-    return this.request<SalesHistoryDto[]>("/seller/sales", { method: "GET" })
+    return this.request<SalesHistoryDto[]>("/seller/sales-history", { method: "GET" })
   }
 
   async createAuction(data: CreateAuctionDto): Promise<AuctionResponseDto> {
@@ -283,6 +283,50 @@ export class ApiClient {
 
   async getApplicationInfo(): Promise<any> {
     return this.request<any>("/guest/info", { method: "GET" })
+  }
+
+  // New endpoints
+  async initiatePayment(orderId: number): Promise<{ paymentUrl: string }> {
+    return this.request<{ paymentUrl: string }>(`/buyer/orders/${orderId}/pay`, {
+      method: "POST",
+    })
+  }
+
+  async uploadArtworkImages(files: File[]): Promise<{ urls: string[] }> {
+    const formData = new FormData()
+    files.forEach((file) => {
+      formData.append("files", file)
+    })
+
+    const response = await fetch(`${this.baseUrl}/seller/artworks/upload`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+      },
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new Error("Failed to upload images")
+    }
+
+    return response.json()
+  }
+
+  async createArtworkWithFiles(formData: FormData): Promise<SellerArtworkDto> {
+    const response = await fetch(`${this.baseUrl}/seller/artworks`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+      },
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new Error("Failed to create artwork")
+    }
+
+    return response.json()
   }
 }
 

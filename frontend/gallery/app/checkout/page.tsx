@@ -3,8 +3,8 @@
 import type React from "react"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { CreditCard, MapPin, User } from "lucide-react"
+import { useRouter } from 'next/navigation'
+import { CreditCard, MapPin, User } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -49,34 +49,31 @@ export default function CheckoutPage() {
     if (items.length === 0 && !authLoading) {
       router.push("/cart")
     }
-  }, [user, isAuthenticated, authLoading, items.length])
+  }, [user, isAuthenticated, authLoading, items.length, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (items.length === 0) return
+    
     setLoading(true)
 
     try {
-      const orderItems = items.map((item) => ({
-        artworkId: item.artworkId,
-        quantity: item.quantity,
-      }))
+      const order = await apiClient.createOrder(items[0].id)
 
-      await apiClient.placeOrder(orderItems)
+      const paymentResponse = await apiClient.initiatePayment(order.id)
 
-      toast({
-        title: "Order placed successfully!",
-        description: "Thank you for your purchase.",
-      })
-
+      // Clear cart before redirecting to payment
       clearCart()
-      router.push("/orders")
+
+      // Redirect to VNPay payment page
+      window.location.href = paymentResponse.paymentUrl
     } catch (error) {
       toast({
         title: "Order failed",
-        description: "Please try again",
+        description: "Unable to process your order. Please try again.",
         variant: "destructive",
       })
-    } finally {
       setLoading(false)
     }
   }
@@ -194,7 +191,7 @@ export default function CheckoutPage() {
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm text-muted-foreground">
-                        Payment will be processed securely through our payment gateway.
+                        Payment will be processed securely through VNPay payment gateway.
                       </p>
                     </CardContent>
                   </Card>
@@ -209,11 +206,11 @@ export default function CheckoutPage() {
                     <CardContent className="space-y-4">
                       <div className="space-y-3">
                         {items.map((item) => (
-                          <div key={item.artworkId} className="flex justify-between text-sm">
+                          <div key={item.id} className="flex justify-between text-sm">
                             <span className="line-clamp-1">
-                              {item.title} x{item.quantity}
+                              {item.title}
                             </span>
-                            <span className="font-medium">${(item.price * item.quantity).toLocaleString()}</span>
+                            <span className="font-medium">${item.price?.toLocaleString()}</span>
                           </div>
                         ))}
                       </div>
@@ -239,11 +236,11 @@ export default function CheckoutPage() {
                       </div>
 
                       <Button type="submit" size="lg" className="w-full" disabled={loading}>
-                        {loading ? "Processing..." : "Place Order"}
+                        {loading ? "Processing..." : "Proceed to Payment"}
                       </Button>
 
                       <p className="text-xs text-muted-foreground text-center">
-                        By placing your order, you agree to our terms and conditions.
+                        You will be redirected to VNPay for secure payment
                       </p>
                     </CardContent>
                   </Card>

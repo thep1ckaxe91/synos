@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,72 +16,141 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Search, Plus, Eye, Edit, Trash2, Calendar, MapPin } from "lucide-react"
+import { Search, Plus, Eye, Edit, Trash2, Calendar, MapPin, Loader2 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-
-// Mock data
-const upcomingExhibitions = [
-  {
-    id: 1,
-    title: "Modern Art Showcase",
-    location: "Gallery Hall A",
-    startDate: "2025-01-15",
-    endDate: "2025-01-30",
-    artworks: 24,
-    status: "Upcoming",
-  },
-  {
-    id: 2,
-    title: "Digital Dreams",
-    location: "Virtual Gallery",
-    startDate: "2025-02-01",
-    endDate: "2025-02-28",
-    artworks: 18,
-    status: "Upcoming",
-  },
-]
-
-const activeExhibitions = [
-  {
-    id: 3,
-    title: "Contemporary Visions",
-    location: "Main Gallery",
-    startDate: "2025-01-01",
-    endDate: "2025-01-14",
-    artworks: 32,
-    status: "Active",
-    visitors: 156,
-  },
-]
-
-const pastExhibitions = [
-  {
-    id: 4,
-    title: "Abstract Expressions",
-    location: "Gallery Hall B",
-    startDate: "2024-12-01",
-    endDate: "2024-12-31",
-    artworks: 28,
-    status: "Completed",
-    visitors: 234,
-  },
-  {
-    id: 5,
-    title: "Photography Masters",
-    location: "Photo Gallery",
-    startDate: "2024-11-15",
-    endDate: "2024-11-30",
-    artworks: 45,
-    status: "Completed",
-    visitors: 189,
-  },
-]
+import { apiService } from "@/lib/api-service"
+import { Exhibition } from "@/lib/types"
+import { toast } from "sonner"
 
 export default function ExhibitionManagement() {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [selectedExhibition, setSelectedExhibition] = useState<any>(null)
+  const [selectedExhibition, setSelectedExhibition] = useState<Exhibition | null>(null)
+  
+  const [exhibitions, setExhibitions] = useState<Exhibition[]>([])
+  const [loading, setLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    location: '',
+    startDate: '',
+    endDate: ''
+  })
+
+  useEffect(() => {
+    loadExhibitions()
+  }, [])
+
+  const loadExhibitions = async () => {
+    try {
+      setLoading(true)
+      const response = await apiService.getExhibitions({ skip: 0, take: 100 })
+      
+      let exhibitionsData: Exhibition[] = []
+      if (Array.isArray(response)) {
+        exhibitionsData = response
+      } else if (response.items) {
+        exhibitionsData = response.items
+      } else if (response.data) {
+        exhibitionsData = response.data
+      }
+      
+      const mappedExhibitions: Exhibition[] = exhibitionsData.map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        startDate: item.startDate,
+        endDate: item.endDate,
+        location: item.location,
+        coverImage: item.coverImage,
+        isActive: item.isActive,
+        createdAt: item.createdAt,
+        deletedAt: item.deletedAt,
+        totalArtworks: item.totalArtworks || 0,
+        totalVisitors: item.totalVisitors || 0,
+        artworks: item.totalArtworks || 0,
+        visitors: item.totalVisitors || 0,
+        status: item.isActive ? 'Active' : 'Inactive'
+      }))
+      
+      setExhibitions(mappedExhibitions)
+    } catch (error) {
+      console.error('Failed to load exhibitions:', error)
+      toast.error('Failed to load exhibitions')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCreate = async () => {
+    try {
+      setActionLoading(true)
+      await apiService.createExhibition(formData)
+      toast.success('Exhibition created successfully')
+      setShowCreateDialog(false)
+      setFormData({ title: '', description: '', location: '', startDate: '', endDate: '' })
+      await loadExhibitions()
+    } catch (error) {
+      console.error('Failed to create exhibition:', error)
+      toast.error('Failed to create exhibition')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleUpdate = async () => {
+    if (!selectedExhibition) return
+    
+    try {
+      setActionLoading(true)
+      await apiService.updateExhibition(selectedExhibition.id, formData)
+      toast.success('Exhibition updated successfully')
+      setShowEditDialog(false)
+      await loadExhibitions()
+    } catch (error) {
+      console.error('Failed to update exhibition:', error)
+      toast.error('Failed to update exhibition')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!selectedExhibition) return
+    
+    try {
+      setActionLoading(true)
+      await apiService.deleteExhibition(selectedExhibition.id)
+      toast.success('Exhibition deleted successfully')
+      setShowDeleteDialog(false)
+      await loadExhibitions()
+    } catch (error) {
+      console.error('Failed to delete exhibition:', error)
+      toast.error('Failed to delete exhibition')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const now = new Date()
+  const activeExhibitions = exhibitions.filter(e => {
+    const start = new Date(e.startDate)
+    const end = new Date(e.endDate)
+    return start <= now && end >= now
+  })
+  const upcomingExhibitions = exhibitions.filter(e => new Date(e.startDate) > now)
+  const pastExhibitions = exhibitions.filter(e => new Date(e.endDate) < now)
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading exhibitions...</span>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -333,38 +402,67 @@ export default function ExhibitionManagement() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="title">Exhibition Title</Label>
-              <Input id="title" placeholder="Enter exhibition title..." />
+              <Input 
+                id="title" 
+                placeholder="Enter exhibition title..." 
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea id="description" rows={4} placeholder="Describe the exhibition..." />
+              <Textarea 
+                id="description" 
+                rows={4} 
+                placeholder="Describe the exhibition..." 
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
-                <Input id="location" placeholder="Gallery location..." />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="artworks-count">Number of Artworks</Label>
-                <Input id="artworks-count" type="number" placeholder="0" />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input 
+                id="location" 
+                placeholder="Gallery location..." 
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              />
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="start-date">Start Date</Label>
-                <Input id="start-date" type="date" />
+                <Input 
+                  id="start-date" 
+                  type="date" 
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="end-date">End Date</Label>
-                <Input id="end-date" type="date" />
+                <Input 
+                  id="end-date" 
+                  type="date" 
+                  value={formData.endDate}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)} disabled={actionLoading}>
               Cancel
             </Button>
-            <Button onClick={() => setShowCreateDialog(false)}>Create Exhibition</Button>
+            <Button onClick={handleCreate} disabled={actionLoading}>
+              {actionLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Exhibition'
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -379,38 +477,64 @@ export default function ExhibitionManagement() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="edit-title">Exhibition Title</Label>
-              <Input id="edit-title" defaultValue={selectedExhibition?.title} />
+              <Input 
+                id="edit-title" 
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-description">Description</Label>
-              <Textarea id="edit-description" rows={4} placeholder="Describe the exhibition..." />
+              <Textarea 
+                id="edit-description" 
+                rows={4} 
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="edit-location">Location</Label>
-                <Input id="edit-location" defaultValue={selectedExhibition?.location} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-artworks">Number of Artworks</Label>
-                <Input id="edit-artworks" type="number" defaultValue={selectedExhibition?.artworks} />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-location">Location</Label>
+              <Input 
+                id="edit-location" 
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              />
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="edit-start-date">Start Date</Label>
-                <Input id="edit-start-date" type="date" defaultValue={selectedExhibition?.startDate} />
+                <Input 
+                  id="edit-start-date" 
+                  type="date" 
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-end-date">End Date</Label>
-                <Input id="edit-end-date" type="date" defaultValue={selectedExhibition?.endDate} />
+                <Input 
+                  id="edit-end-date" 
+                  type="date" 
+                  value={formData.endDate}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)} disabled={actionLoading}>
               Cancel
             </Button>
-            <Button onClick={() => setShowEditDialog(false)}>Save Changes</Button>
+            <Button onClick={handleUpdate} disabled={actionLoading}>
+              {actionLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -425,11 +549,18 @@ export default function ExhibitionManagement() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)} disabled={actionLoading}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={() => setShowDeleteDialog(false)}>
-              Delete
+            <Button variant="destructive" onClick={handleDelete} disabled={actionLoading}>
+              {actionLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

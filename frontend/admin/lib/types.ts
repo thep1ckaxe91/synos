@@ -128,6 +128,36 @@ export interface PaginatedResponse<T> {
   totalPages: number
 }
 
+export interface Transaction {
+  id: number
+  userId: number
+  userName: string
+  userEmail: string
+  orderNumber: string
+  totalAmount: number
+  currency: string
+  paymentType: string
+  paymentTime: string
+  status: string
+  createdAt: string
+  updatedAt: string
+  deletedAt?: string
+  orderItems: OrderItem[]
+  totalItems: number
+  buyerName: string
+  buyerEmail?: string
+}
+
+export interface OrderItem {
+  id: number
+  artworkId: number
+  artworkTitle: string
+  artworkImage?: string
+  quantity: number
+  unitPrice: number
+  totalPrice: number
+}
+
 export interface ApiError {
   message: string
   status?: number

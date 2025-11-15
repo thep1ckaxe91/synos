@@ -1,9 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter } from 'next/navigation'
 import Image from "next/image"
-import { Clock, Gavel, ArrowLeft, Users } from "lucide-react"
+import { Clock, Gavel, ArrowLeft, Users } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -14,6 +14,7 @@ import { apiClient } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import { Separator } from "@/components/ui/separator"
+import { getImageUrl } from "@/lib/utils"
 
 export default function AuctionDetailPage() {
   const params = useParams()
@@ -164,7 +165,7 @@ export default function AuctionDetailPage() {
             <div className="space-y-4">
               <div className="aspect-square relative overflow-hidden rounded-lg bg-muted">
                 <Image
-                  src={artwork?.artworkImages?.[0]?.imageUrl || "/placeholder.svg?height=800&width=800"}
+                  src={getImageUrl(artwork?.artworkImages?.[0]?.imageUrl) || "/placeholder.svg"}
                   alt={artwork?.title || "Artwork"}
                   fill
                   className="object-cover"
