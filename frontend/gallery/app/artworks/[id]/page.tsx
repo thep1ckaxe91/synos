@@ -225,7 +225,7 @@ export default function ArtworkDetailPage() {
 
             {/* Actions */}
             <div className="space-y-3">
-              {artwork.saleType === 'Fixed Price' && artwork.status === 'Available' && (
+              {artwork.saleType === 'FixedPrice' && artwork.status === 'Available' && (
                 <Button
                   size="lg"
                   className="w-full"

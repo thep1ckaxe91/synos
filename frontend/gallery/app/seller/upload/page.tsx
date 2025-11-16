@@ -33,7 +33,7 @@ export default function UploadArtworkPage() {
     description: '',
     categoryId: '',
     price: '',
-    saleType: 'Fixed Price',
+    saleType: 'FixedPrice',
     medium: '',
     dimensions: '',
     year: '',
@@ -279,7 +279,7 @@ export default function UploadArtworkPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Fixed Price">Fixed Price</SelectItem>
+                      <SelectItem value="FixedPrice">Fixed Price</SelectItem>
                       <SelectItem value="Auction">Auction</SelectItem>
                     </SelectContent>
                   </Select>
