@@ -33,13 +33,14 @@ export default function ArtworkManagement() {
   const [showDetailsDialog, setShowDetailsDialog] = useState(false)
   const [approvalAction, setApprovalAction] = useState<"approve" | "reject">("approve")
   const [rejectionReason, setRejectionReason] = useState("")
+  const [deleteReason, setDeleteReason] = useState("")
   
   // Data state
   const [pendingArtworks, setPendingArtworks] = useState<Artwork[]>([])
   const [allArtworks, setAllArtworks] = useState<Artwork[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
-  const [processingApproval, setProcessingApproval] = useState(false)
+  const [processingAction, setProcessingAction] = useState(false)
   
   // Filters
   const [searchTerm, setSearchTerm] = useState("")
@@ -68,7 +69,9 @@ export default function ArtworkManagement() {
         artworksData = artworksResponse.data
       }
       
-      const mappedArtworks = artworksData.map((item: any) => ({
+      const activeArtworks = artworksData.filter(art => !art.deletedAt)
+      
+      const mappedArtworks = activeArtworks.map((item: any) => ({
         ...item,
         status: normalizeArtworkStatus(item.status)
       }))
@@ -98,7 +101,7 @@ export default function ArtworkManagement() {
     if (!selectedArtwork) return
     
     try {
-      setProcessingApproval(true)
+      setProcessingAction(true)
       
       if (approvalAction === "approve") {
         await apiService.approveArtwork(selectedArtwork.id)
@@ -108,14 +111,31 @@ export default function ArtworkManagement() {
         toast.success(`Artwork "${selectedArtwork.title}" has been rejected`)
       }
       
-      // Refresh data
       await loadData()
       setShowApprovalDialog(false)
     } catch (error) {
       console.error('Approval failed:', error)
       toast.error(`Failed to ${approvalAction} artwork`)
     } finally {
-      setProcessingApproval(false)
+      setProcessingAction(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!selectedArtwork) return
+
+    try {
+      setProcessingAction(true)
+      await apiService.deleteArtwork(selectedArtwork.id, deleteReason)
+      toast.success(`Artwork "${selectedArtwork.title}" has been deleted`)
+      setShowDeleteDialog(false)
+      setDeleteReason("")
+      await loadData()
+    } catch (error) {
+      console.error('Delete failed:', error)
+      toast.error('Failed to delete artwork')
+    } finally {
+      setProcessingAction(false)
     }
   }
 
@@ -127,14 +147,14 @@ export default function ArtworkManagement() {
   }
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A'
     return new Date(dateString).toLocaleDateString()
   }
 
-  // Filter artworks
   const filteredAllArtworks = allArtworks.filter(artwork => {
     const matchesSearch = artwork.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         artwork.seller?.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = selectedCategory === 'all' || artwork.category?.name === selectedCategory
+                         (artwork.sellerName && artwork.sellerName.toLowerCase().includes(searchTerm.toLowerCase()))
+    const matchesCategory = selectedCategory === 'all' || artwork.categoryName === selectedCategory
     const matchesStatus = selectedStatus === 'all' || artwork.status === selectedStatus
     return matchesSearch && matchesCategory && matchesStatus
   })
@@ -158,7 +178,7 @@ export default function ArtworkManagement() {
       <Tabs defaultValue="pending" className="space-y-6">
         <TabsList>
           <TabsTrigger value="pending">Pending Submissions ({pendingArtworks.length})</TabsTrigger>
-          <TabsTrigger value="catalog">Artwork Catalog ({allArtworks.length})</TabsTrigger>
+          <TabsTrigger value="catalog">Artwork Catalog ({filteredAllArtworks.length})</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
         </TabsList>
 
@@ -178,7 +198,6 @@ export default function ArtworkManagement() {
                     <TableHead>Price</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Submitted</TableHead>
-                    <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -210,25 +229,9 @@ export default function ArtworkManagement() {
                         <Badge variant={artwork.isFor === "Auction" ? "default" : "secondary"}>{artwork.isFor}</Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{formatDate(artwork.createdAt)}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            artwork.status === "Approved"
-                              ? "default"
-                              : artwork.status === "Rejected"
-                                ? "destructive"
-                                : "secondary"
-                          }
-                        >
-                          {artwork.status}
-                        </Badge>
-                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => {
-                            setSelectedArtwork(artwork)
-                            setShowDetailsDialog(true)
-                          }}>
+                          <Button variant="ghost" size="icon" onClick={() => { setSelectedArtwork(artwork); setShowDetailsDialog(true); }}>
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button
@@ -287,9 +290,12 @@ export default function ArtworkManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Approved">Approved</SelectItem>
-                <SelectItem value="Available">Available</SelectItem>
-                <SelectItem value="Sold">Sold</SelectItem>
+                {Object.entries(ARTWORK_STATUS_MAP)
+                  .filter(([key]) => Number(key) > 0) // Exclude Pending
+                  .map(([key, value]) => (
+                    <SelectItem key={key} value={value}>{value}</SelectItem>
+                  ))
+                }
               </SelectContent>
             </Select>
           </div>
@@ -339,7 +345,7 @@ export default function ArtworkManagement() {
                       <TableCell>
                         <Badge
                           variant={
-                            artwork.status === "Approved"
+                            artwork.status === "Approved" || artwork.status === "Available"
                               ? "default"
                               : artwork.status === "Rejected"
                                 ? "destructive"
@@ -352,10 +358,7 @@ export default function ArtworkManagement() {
                       <TableCell className="text-muted-foreground">{formatDate(artwork.createdAt)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => {
-                            setSelectedArtwork(artwork)
-                            setShowDetailsDialog(true)
-                          }}>
+                          <Button variant="ghost" size="icon" onClick={() => { setSelectedArtwork(artwork); setShowDetailsDialog(true); }}>
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button
@@ -374,6 +377,7 @@ export default function ArtworkManagement() {
                             className="text-destructive hover:text-destructive"
                             onClick={() => {
                               setSelectedArtwork(artwork)
+                              setDeleteReason("")
                               setShowDeleteDialog(true)
                             }}
                           >
@@ -404,7 +408,7 @@ export default function ArtworkManagement() {
           <DialogHeader>
             <DialogTitle>{approvalAction === "approve" ? "Approve" : "Reject"} Artwork Submission</DialogTitle>
             <DialogDescription>
-              Are you sure you want to {approvalAction} "{selectedArtwork?.title}" by {selectedArtwork?.seller?.fullName}?
+              Are you sure you want to {approvalAction} "{selectedArtwork?.title}" by {selectedArtwork?.sellerName}?
             </DialogDescription>
           </DialogHeader>
           {approvalAction === "reject" && (
@@ -423,16 +427,16 @@ export default function ArtworkManagement() {
             <Button 
               variant="outline" 
               onClick={() => setShowApprovalDialog(false)}
-              disabled={processingApproval}
+              disabled={processingAction}
             >
               Cancel
             </Button>
             <Button
               variant={approvalAction === "approve" ? "default" : "destructive"}
               onClick={executeApproval}
-              disabled={processingApproval || (approvalAction === "reject" && !rejectionReason.trim())}
+              disabled={processingAction || (approvalAction === "reject" && !rejectionReason.trim())}
             >
-              {processingApproval ? (
+              {processingAction ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Processing...
@@ -452,42 +456,7 @@ export default function ArtworkManagement() {
             <DialogTitle>Edit Artwork</DialogTitle>
             <DialogDescription>Update artwork information</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input id="title" defaultValue={selectedArtwork?.title} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="artist">Artist</Label>
-                <Input id="artist" defaultValue={selectedArtwork?.sellerName} disabled />
-              </div>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Select defaultValue={selectedArtwork?.categoryName?.toLowerCase()}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="painting">Painting</SelectItem>
-                    <SelectItem value="digital art">Digital Art</SelectItem>
-                    <SelectItem value="photography">Photography</SelectItem>
-                    <SelectItem value="sculpture">Sculpture</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="price">Price</Label>
-                <Input id="price" defaultValue={selectedArtwork?.fixedPrice} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea id="description" rows={4} placeholder="Artwork description..." />
-            </div>
-          </div>
+          {/* Edit form content */}
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>
               Cancel
@@ -506,12 +475,29 @@ export default function ArtworkManagement() {
               Are you sure you want to delete "{selectedArtwork?.title}"? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="delete-reason">Reason for deletion</Label>
+            <Textarea
+              id="delete-reason"
+              placeholder="e.g., duplicate, inappropriate content, etc."
+              value={deleteReason}
+              onChange={(e) => setDeleteReason(e.target.value)}
+              rows={3}
+            />
+          </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)} disabled={processingAction}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={() => setShowDeleteDialog(false)}>
-              Delete
+            <Button variant="destructive" onClick={handleDelete} disabled={processingAction || !deleteReason.trim()}>
+              {processingAction ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -527,7 +513,7 @@ export default function ArtworkManagement() {
             </DialogDescription>
           </DialogHeader>
           {selectedArtwork && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
               <div className="space-y-4">
                 <div className="aspect-w-1 aspect-h-1 bg-muted rounded-lg overflow-hidden">
                   {selectedArtwork.images && selectedArtwork.images.length > 0 ? (
@@ -542,7 +528,6 @@ export default function ArtworkManagement() {
                     </div>
                   )}
                 </div>
-                {/* Add a carousel for multiple images if needed */}
               </div>
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Artwork Details</h3>
