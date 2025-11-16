@@ -52,6 +52,7 @@ export const API_ENDPOINTS = {
     createExhibition: '/admin/exhibitions',
     updateExhibition: (id: number) => `/admin/exhibitions/${id}`,
     deleteExhibition: (id: number) => `/admin/exhibitions/${id}`,
+    updateExhibitionArtworks: (id: number) => `/admin/exhibitions/${id}/artworks`,
     
     // Analytics
     popularArtworks: '/admin/analytics/popular-artworks',

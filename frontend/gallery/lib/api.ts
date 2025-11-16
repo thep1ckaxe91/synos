@@ -31,6 +31,7 @@ import type {
   SalesHistoryDto,
   CreateAuctionDto,
   AuctionResponseDto,
+  GuestExhibitionViewDto,
 } from "./types"
 
 export class ApiClient {
@@ -150,8 +151,12 @@ export class ApiClient {
     return this.request<GuestExhibitionDto[]>(`/guest/exhibitions?skip=${skip}&take=${take}`, { method: "GET" })
   }
 
-  async getExhibitionDetails(exhibitionId: number): Promise<GuestExhibitionDto> {
+  async getExhibition(exhibitionId: number): Promise<GuestExhibitionDto> {
     return this.request<GuestExhibitionDto>(`/guest/exhibitions/${exhibitionId}`, { method: "GET" })
+  }
+
+  async getExhibitionDetails(exhibitionId: string): Promise<GuestExhibitionViewDto> {
+    return this.request<GuestExhibitionViewDto>(`/guest/exhibitions/view/${exhibitionId}`, { method: "GET" })
   }
 
   async getActiveExhibitions(): Promise<GuestExhibitionDto[]> {
@@ -331,3 +336,7 @@ export class ApiClient {
 }
 
 export const apiClient = new ApiClient()
+
+export const getExhibitionDetails = async (exhibitionId: string): Promise<GuestExhibitionViewDto> => {
+  return apiClient.getExhibitionDetails(exhibitionId)
+}

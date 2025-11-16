@@ -423,5 +423,16 @@ namespace Synos.Api.Controllers
                 return StatusCode(500, new { message = "An error occurred while retrieving application info" });
             }
         }
+
+        [HttpGet("exhibitions/view/{id}")]
+        public async Task<ActionResult<GuestExhibitionViewDto>> GetExhibition(long id)
+        {
+            var exhibition = await _guestService.GetExhibitionAsync(id);
+            if (exhibition == null)
+            {
+                return NotFound();
+            }
+            return Ok(exhibition);
+        }
     }
 }

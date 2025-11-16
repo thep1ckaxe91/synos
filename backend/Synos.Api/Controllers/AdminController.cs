@@ -749,6 +749,27 @@ namespace Synos.Api.Controllers
             }
         }
 
+        [HttpPut("exhibitions/{exhibitionId}/artworks")]
+        [JwtAuthorize("Admin")]
+        public async Task<IActionResult> UpdateExhibitionArtworks(long exhibitionId, [FromBody] UpdateExhibitionArtworksDto dto)
+        {
+            try
+            {
+                await _adminService.UpdateExhibitionArtworksAsync(exhibitionId, dto);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Exhibition not found when trying to update artworks for exhibition ID {ExhibitionId}", exhibitionId);
+                return NotFound(new { Message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating artworks for exhibition with ID {ExhibitionId}", exhibitionId);
+                return StatusCode(500, new { Message = "An error occurred while updating exhibition artworks" });
+            }
+        }
+
         /// <summary>
         /// Delete exhibition
         /// </summary>

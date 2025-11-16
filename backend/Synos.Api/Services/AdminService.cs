@@ -55,6 +55,7 @@ namespace Synos.Api.Services
         Task<AdminExhibitionViewDto> CreateExhibitionAsync(CreateExhibitionDto dto);
         Task<AdminExhibitionViewDto?> UpdateExhibitionAsync(long exhibitionId, UpdateExhibitionDto dto);
         Task<bool> DeleteExhibitionAsync(long exhibitionId, DeleteExhibitionDto dto);
+        Task UpdateExhibitionArtworksAsync(long exhibitionId, UpdateExhibitionArtworksDto dto);
 
         // Artwork Full Management
         Task<AdminArtworkViewDto?> UpdateArtworkAsync(long artworkId, UpdateArtworkAdminDto dto);
@@ -714,6 +715,11 @@ namespace Synos.Api.Services
             exhibition.DeletedAt = TimeUtils.GetCurrentTime();
             var updated = await _exhibitionRepository.UpdateExhibitionAsync(exhibition.Id, exhibition);
             return updated != null;
+        }
+
+        public async Task UpdateExhibitionArtworksAsync(long exhibitionId, UpdateExhibitionArtworksDto dto)
+        {
+            await _adminRepository.UpdateExhibitionArtworksAsync(exhibitionId, dto);
         }
 
         // ===========================================

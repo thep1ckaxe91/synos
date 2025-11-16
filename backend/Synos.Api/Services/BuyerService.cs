@@ -287,7 +287,7 @@ namespace Synos.Api.Services
                 CreatedAt = auction.CreatedAt,
                 TotalBids = totalBids,
                 CurrentHighestBid = currentHighestBid,
-                Artwork = new AuctionArtworkDto
+                Artwork = auction.Artwork == null ? null : new AuctionArtworkDto
                 {
                     Id = auction.Artwork.Id,
                     Title = auction.Artwork.Title,

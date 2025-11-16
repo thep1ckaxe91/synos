@@ -3,6 +3,7 @@ using Synos.Api.Data;
 using Synos.Api.DTOs;
 using Synos.Api.Models;
 using Synos.Api.Repositories;
+using Synos.Api.Utils;
 
 namespace Synos.Api.Services
 {
@@ -13,19 +14,33 @@ namespace Synos.Api.Services
         private readonly IExhibitionRepository _exhibitionRepository;
         private readonly ICategoryRepository _categoryRepository;
         private readonly IAuctionRepository _auctionRepository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public GuestService(
             ApplicationDbContext context,
             IArtworkRepository artworkRepository,
             IExhibitionRepository exhibitionRepository,
             ICategoryRepository categoryRepository,
-            IAuctionRepository auctionRepository)
+            IAuctionRepository auctionRepository,
+            IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _artworkRepository = artworkRepository;
             _exhibitionRepository = exhibitionRepository;
             _categoryRepository = categoryRepository;
             _auctionRepository = auctionRepository;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        private string GetBaseUrl()
+        {
+            var request = _httpContextAccessor.HttpContext?.Request;
+            if (request == null)
+                return "http://localhost:8080"; // Fallback for Docker environment
+
+            
+
+            return $"{request.Scheme}://{request.Host}";
         }
 
         public async Task<IEnumerable<GuestArtworkDto>> GetAllArtworksAsync(int skip = 0, int take = 50)
@@ -268,6 +283,52 @@ namespace Synos.Api.Services
                 .FirstOrDefaultAsync(e => e.Id == exhibitionId && e.DeletedAt == null);
 
             return exhibition == null ? null : MapToGuestExhibitionDto(exhibition);
+        }
+
+        public async Task<GuestExhibitionViewDto?> GetExhibitionAsync(long exhibitionId)
+        {
+            var exhibition = await _exhibitionRepository.GetExhibitionForGuestAsync(exhibitionId);
+            if (exhibition == null)
+            {
+                return null;
+            }
+
+            var currentTime = TimeUtils.GetCurrentTime();
+            var artworks = exhibition.ExhibitionArtworks
+                .Where(ea => 
+                    ea.Artwork.Status == ArtworkStatus.Available &&
+                    ea.Artwork.DeletedAt == null &&
+                    (!ea.DisplayFrom.HasValue || ea.DisplayFrom.Value <= currentTime) &&
+                    (!ea.DisplayTo.HasValue || ea.DisplayTo.Value >= currentTime)
+                )
+                .Select(ea => new GuestArtworkInExhibitionDto
+                {
+                    Id = ea.Artwork.Id,
+                    Title = ea.Artwork.Title,
+                    PrimaryImageUrl = ea.Artwork.ArtworkImages.FirstOrDefault(i => i.IsPrimary)?.FilePath,
+                    SellerName = ea.Artwork.Seller.FullName,
+                })
+                .ToList();
+            
+            // Process image URLs
+            foreach (var artwork in artworks)
+            {
+                if (!string.IsNullOrEmpty(artwork.PrimaryImageUrl))
+                {
+                    artwork.PrimaryImageUrl = $"{GetBaseUrl()}/uploads/{artwork.PrimaryImageUrl.Replace("\\", "/")}";
+                }
+            }
+
+            return new GuestExhibitionViewDto
+            {
+                Id = exhibition.Id,
+                Title = exhibition.Title,
+                Description = exhibition.Description,
+                Location = exhibition.Location,
+                StartDate = exhibition.StartDate,
+                EndDate = exhibition.EndDate,
+                Artworks = artworks
+            };
         }
 
         public async Task<IEnumerable<GuestExhibitionDto>> GetActiveExhibitionsAsync()

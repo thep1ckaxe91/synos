@@ -263,6 +263,7 @@ namespace Synos.Api.DTOs
         public DateTime? DeletedAt { get; set; }
         public int TotalArtworks { get; set; }
         public int TotalVisitors { get; set; }
+        public List<ExhibitionArtworkDetailDto> Artworks { get; set; } = new List<ExhibitionArtworkDetailDto>();
     }
 
     public class ExhibitionArtworkManageDto
@@ -277,6 +278,27 @@ namespace Synos.Api.DTOs
     {
         public string Reason { get; set; } = string.Empty;
         public bool RemoveArtworks { get; set; } = false;
+    }
+
+    public class UpdateExhibitionArtworksDto
+    {
+        public IEnumerable<ExhibitionArtworkDto> Artworks { get; set; } = new List<ExhibitionArtworkDto>();
+    }
+
+    public class ExhibitionArtworkDto
+    {
+        public long ArtworkId { get; set; }
+        public DateTime? DisplayFrom { get; set; }
+        public DateTime? DisplayTo { get; set; }
+    }
+
+    public class ExhibitionArtworkDetailDto
+    {
+        public long ArtworkId { get; set; }
+        public string ArtworkTitle { get; set; } = string.Empty;
+        public string? PrimaryImageUrl { get; set; }
+        public DateTime? DisplayFrom { get; set; }
+        public DateTime? DisplayTo { get; set; }
     }
 
     // === CATEGORY MANAGEMENT DTOs ===

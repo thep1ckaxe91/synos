@@ -1,4 +1,5 @@
 import { API_CONFIG, API_ENDPOINTS, ApiResponse, PaginatedResponse } from './api-config'
+import { ExhibitionArtworkDetail } from './types'
 
 class ApiService {
   private baseURL: string
@@ -319,6 +320,13 @@ class ApiService {
       body: JSON.stringify({ reason, removeArtworks }),
     })
   }
+
+  async updateExhibitionArtworks(id: number, artworks: ExhibitionArtworkDetail[]): Promise<ApiResponse> {
+    return this.makeRequest(API_ENDPOINTS.admin.updateExhibitionArtworks(id), {
+        method: 'PUT',
+        body: JSON.stringify({ artworks }),
+    });
+}
 
   // Category methods
   async getCategories(): Promise<any[]> {

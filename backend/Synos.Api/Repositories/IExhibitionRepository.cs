@@ -27,5 +27,8 @@ namespace Synos.Api.Repositories
         Task<int> GetActiveExhibitionsCountAsync();
         Task<int> GetArtworkCountByExhibitionIdAsync(long exhibitionId);
         Task<IEnumerable<Exhibition>> GetRecentExhibitionsAsync(int count = 10);
+
+        // Guest-specific
+        Task<Exhibition?> GetExhibitionForGuestAsync(long exhibitionId);
     }
 }

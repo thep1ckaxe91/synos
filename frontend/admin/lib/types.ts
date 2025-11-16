@@ -148,8 +148,16 @@ export interface Exhibition {
   totalArtworks: number
   totalVisitors: number
   status?: string
-  artworks?: number
+  artworks?: ExhibitionArtworkDetail[]
   visitors?: number
+}
+
+export interface ExhibitionArtworkDetail {
+  artworkId: number
+  artworkTitle: string
+  primaryImageUrl?: string
+  displayFrom?: Date | null
+  displayTo?: Date | null
 }
 
 export interface DashboardStats {

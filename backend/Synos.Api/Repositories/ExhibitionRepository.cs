@@ -193,5 +193,18 @@ namespace Synos.Api.Repositories
                 .Take(count)
                 .ToListAsync();
         }
+
+        public async Task<Exhibition?> GetExhibitionForGuestAsync(long exhibitionId)
+        {
+            return await _context.Exhibitions
+                .Include(e => e.ExhibitionArtworks)
+                    .ThenInclude(ea => ea.Artwork)
+                        .ThenInclude(a => a.Seller)
+                .Include(e => e.ExhibitionArtworks)
+                    .ThenInclude(ea => ea.Artwork)
+                        .ThenInclude(a => a.ArtworkImages)
+                .Where(e => e.Id == exhibitionId && e.DeletedAt == null)
+                .FirstOrDefaultAsync();
+        }
     }
 }

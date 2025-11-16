@@ -4,6 +4,7 @@ using Synos.Api.Repositories;
 using Synos.Api.Utils;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Http; // Added for IHttpContextAccessor
 
 namespace Synos.Api.Services
 {
@@ -24,17 +25,32 @@ namespace Synos.Api.Services
         Task<bool> AddToFavoritesAsync(long memberId, AddToFavoriteDto addToFavoriteDto);
         Task<bool> RemoveFromFavoritesAsync(long memberId, long artworkId);
         Task<bool> IsFavoriteAsync(long memberId, long artworkId);
+        Task<GuestExhibitionViewDto?> GetExhibitionAsync(long exhibitionId);
     }
 
     public class MemberService : IMemberService
     {
         private readonly IMemberRepository _memberRepository;
         private readonly IJwtService _jwtService;
+        private readonly IExhibitionRepository _exhibitionRepository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public MemberService(IMemberRepository memberRepository, IJwtService jwtService)
+        public MemberService(IMemberRepository memberRepository, IJwtService jwtService, 
+            IExhibitionRepository exhibitionRepository, IHttpContextAccessor httpContextAccessor)
         {
             _memberRepository = memberRepository;
             _jwtService = jwtService;
+            _exhibitionRepository = exhibitionRepository;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        private string GetBaseUrl()
+        {
+            var request = _httpContextAccessor.HttpContext?.Request;
+            if (request == null)
+                return "http://localhost:8080"; // Fallback for Docker environment
+
+            return $"{request.Scheme}://{request.Host}";
         }
 
         public async Task<AuthResultDto> LoginAsync(MemberLoginDto loginDto)
@@ -213,6 +229,52 @@ namespace Synos.Api.Services
             // In a real application, you would invalidate the token here
             // For now, just return true as logout is handled client-side
             return Task.FromResult(true);
+        }
+
+        public async Task<GuestExhibitionViewDto?> GetExhibitionAsync(long exhibitionId)
+        {
+            var exhibition = await _exhibitionRepository.GetExhibitionForGuestAsync(exhibitionId);
+            if (exhibition == null)
+            {
+                return null;
+            }
+
+            var currentTime = TimeUtils.GetCurrentTime();
+            var artworks = exhibition.ExhibitionArtworks
+                .Where(ea => 
+                    ea.Artwork.Status == ArtworkStatus.Available &&
+                    ea.Artwork.DeletedAt == null &&
+                    (!ea.DisplayFrom.HasValue || ea.DisplayFrom.Value <= currentTime) &&
+                    (!ea.DisplayTo.HasValue || ea.DisplayTo.Value >= currentTime)
+                )
+                .Select(ea => new GuestArtworkInExhibitionDto
+                {
+                    Id = ea.Artwork.Id,
+                    Title = ea.Artwork.Title,
+                    PrimaryImageUrl = ea.Artwork.ArtworkImages.FirstOrDefault(i => i.IsPrimary)?.FilePath,
+                    SellerName = ea.Artwork.Seller.FullName,
+                })
+                .ToList();
+            
+            // Process image URLs
+            foreach (var artwork in artworks)
+            {
+                if (!string.IsNullOrEmpty(artwork.PrimaryImageUrl))
+                {
+                    artwork.PrimaryImageUrl = $"{GetBaseUrl()}/uploads/{artwork.PrimaryImageUrl.Replace("\\", "/")}";
+                }
+            }
+
+            return new GuestExhibitionViewDto
+            {
+                Id = exhibition.Id,
+                Title = exhibition.Title,
+                Description = exhibition.Description,
+                Location = exhibition.Location,
+                StartDate = exhibition.StartDate,
+                EndDate = exhibition.EndDate,
+                Artworks = artworks
+            };
         }
 
         private MemberDto MapToMemberDto(Member member)

@@ -26,6 +26,7 @@ namespace Synos.Api.Services
         Task<IEnumerable<GuestExhibitionDto>> GetUpcomingExhibitionsAsync();
         Task<IEnumerable<GuestExhibitionDto>> GetPastExhibitionsAsync();
         Task<IEnumerable<GuestArtworkDto>> GetExhibitionArtworksAsync(long exhibitionId);
+        Task<GuestExhibitionViewDto?> GetExhibitionAsync(long exhibitionId);
 
         // Statistics and overview
         Task<GuestStatisticsDto> GetStatisticsAsync();
