@@ -57,23 +57,36 @@ export default function ExhibitionManagement() {
         exhibitionsData = response.data
       }
       
-      const mappedExhibitions: Exhibition[] = exhibitionsData.map((item: any) => ({
-        id: item.id,
-        title: item.title,
-        description: item.description,
-        startDate: item.startDate,
-        endDate: item.endDate,
-        location: item.location,
-        coverImage: item.coverImage,
-        isActive: item.isActive,
-        createdAt: item.createdAt,
-        deletedAt: item.deletedAt,
-        totalArtworks: item.totalArtworks || 0,
-        totalVisitors: item.totalVisitors || 0,
-        artworks: item.totalArtworks || 0,
-        visitors: item.totalVisitors || 0,
-        status: item.isActive ? 'Active' : 'Inactive'
-      }))
+      const mappedExhibitions: Exhibition[] = exhibitionsData.map((item: any) => {
+        const now = new Date();
+        const startDate = new Date(item.startDate);
+        const endDate = new Date(item.endDate);
+        let status = 'Inactive';
+        if (startDate <= now && endDate >= now) {
+          status = 'Active';
+        } else if (startDate > now) {
+          status = 'Upcoming';
+        } else if (endDate < now) {
+          status = 'Past';
+        }
+
+        return {
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          startDate: item.startDate,
+          endDate: item.endDate,
+          location: item.location,
+          coverImage: item.coverImage,
+          createdAt: item.createdAt,
+          deletedAt: item.deletedAt,
+          totalArtworks: item.totalArtworks || 0,
+          totalVisitors: item.totalVisitors || 0,
+          artworks: item.totalArtworks || 0,
+          visitors: item.totalVisitors || 0,
+          status: status
+        }
+      })
       
       setExhibitions(mappedExhibitions)
     } catch (error) {

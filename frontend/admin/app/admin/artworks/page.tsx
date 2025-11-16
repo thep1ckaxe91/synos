@@ -30,6 +30,7 @@ export default function ArtworkManagement() {
   const [showApprovalDialog, setShowApprovalDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false)
   const [approvalAction, setApprovalAction] = useState<"approve" | "reject">("approve")
   const [rejectionReason, setRejectionReason] = useState("")
   
@@ -177,6 +178,7 @@ export default function ArtworkManagement() {
                     <TableHead>Price</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Submitted</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -208,9 +210,25 @@ export default function ArtworkManagement() {
                         <Badge variant={artwork.isFor === "Auction" ? "default" : "secondary"}>{artwork.isFor}</Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{formatDate(artwork.createdAt)}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            artwork.status === "Approved"
+                              ? "default"
+                              : artwork.status === "Rejected"
+                                ? "destructive"
+                                : "secondary"
+                          }
+                        >
+                          {artwork.status}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => setSelectedArtwork(artwork)}>
+                          <Button variant="ghost" size="icon" onClick={() => {
+                            setSelectedArtwork(artwork)
+                            setShowDetailsDialog(true)
+                          }}>
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button
@@ -334,7 +352,10 @@ export default function ArtworkManagement() {
                       <TableCell className="text-muted-foreground">{formatDate(artwork.createdAt)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => setSelectedArtwork(artwork)}>
+                          <Button variant="ghost" size="icon" onClick={() => {
+                            setSelectedArtwork(artwork)
+                            setShowDetailsDialog(true)
+                          }}>
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button
@@ -491,6 +512,76 @@ export default function ArtworkManagement() {
             </Button>
             <Button variant="destructive" onClick={() => setShowDeleteDialog(false)}>
               Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Details Dialog */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{selectedArtwork?.title}</DialogTitle>
+            <DialogDescription>
+              By {selectedArtwork?.sellerName}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedArtwork && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="aspect-w-1 aspect-h-1 bg-muted rounded-lg overflow-hidden">
+                  {selectedArtwork.images && selectedArtwork.images.length > 0 ? (
+                    <img
+                      src={getImageUrl(selectedArtwork.images[0].imageUrl) || "/placeholder.svg"}
+                      alt={selectedArtwork.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <ImageIcon className="h-16 w-16 text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+                {/* Add a carousel for multiple images if needed */}
+              </div>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Artwork Details</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="font-medium text-muted-foreground">Status</p>
+                    <p>{selectedArtwork.status}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-muted-foreground">Price</p>
+                    <p>{formatPrice(selectedArtwork.fixedPrice || 0)}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-muted-foreground">Category</p>
+                    <p>{selectedArtwork.categoryName}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-muted-foreground">Type</p>
+                    <p>{selectedArtwork.isFor}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-muted-foreground">Submitted</p>
+                    <p>{formatDate(selectedArtwork.createdAt)}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-muted-foreground">Last Updated</p>
+                    <p>{formatDate(selectedArtwork.updatedAt)}</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="font-medium text-muted-foreground">Description</p>
+                  <p className="text-sm">{selectedArtwork.description || "No description provided."}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
