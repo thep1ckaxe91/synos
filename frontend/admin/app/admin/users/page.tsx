@@ -15,11 +15,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Search, Check, X, Eye, UserCog, Loader2 } from "lucide-react"
+import { Search, Check, X, Eye, UserCog, Loader2 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { apiService } from "@/lib/api-service"
 import { Member } from "@/lib/types"
 import { toast } from "sonner"
+import { normalizeUserRole } from "@/lib/constants"
 
 export default function UserManagement() {
   const [selectedUser, setSelectedUser] = useState<Member | null>(null)
@@ -29,6 +30,7 @@ export default function UserManagement() {
   // Data state
   const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState(false)
   
   // Filters
   const [searchTerm, setSearchTerm] = useState("")
@@ -42,7 +44,12 @@ export default function UserManagement() {
     try {
       setLoading(true)
       const response = await apiService.getMembers({ skip: 0, take: 100 })
-      setMembers(response.items || [])
+      let membersData = Array.isArray(response) ? response : (response.items || response.data || [])
+      membersData = membersData.map(member => ({
+        ...member,
+        role: normalizeUserRole(member.role)
+      }))
+      setMembers(membersData)
     } catch (error) {
       console.error('Failed to load members:', error)
       toast.error('Failed to load members')
@@ -57,6 +64,28 @@ export default function UserManagement() {
     setShowApprovalDialog(true)
   }
 
+  const confirmApproval = async () => {
+    if (!selectedUser) return
+    
+    try {
+      setActionLoading(true)
+      if (approvalAction === "approve") {
+        await apiService.approveMember(selectedUser.id)
+        toast.success(`Approved ${selectedUser.fullName}`)
+      } else {
+        await apiService.rejectMember(selectedUser.id)
+        toast.success(`Rejected ${selectedUser.fullName}`)
+      }
+      setShowApprovalDialog(false)
+      await loadMembers()
+    } catch (error) {
+      console.error(`Failed to ${approvalAction} member:`, error)
+      toast.error(`Failed to ${approvalAction} member`)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString()
   }
@@ -65,13 +94,12 @@ export default function UserManagement() {
   const filteredMembers = members.filter(member => {
     const matchesSearch = member.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          member.email.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesRole = selectedRole === 'all' || member.role === selectedRole
+    const matchesRole = selectedRole === 'all' || (selectedRole === 'Seller' ? member.role === 'Seller' : selectedRole === 'Buyer' ? member.role === 'Buyer' : true)
     return matchesSearch && matchesRole
   })
 
   const activeMembers = filteredMembers.filter(member => member.isActive)
   const inactiveMembers = filteredMembers.filter(member => !member.isActive)
-  const pendingUsers = members.filter(member => member.status === 'Pending')
 
   if (loading) {
     return (
@@ -91,9 +119,8 @@ export default function UserManagement() {
 
       <Tabs defaultValue="pending" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="pending">Inactive Members ({inactiveMembers.length})</TabsTrigger>
+          <TabsTrigger value="pending">Pending Members ({inactiveMembers.length})</TabsTrigger>
           <TabsTrigger value="active">Active Members ({activeMembers.length})</TabsTrigger>
-          <TabsTrigger value="all">All Users</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pending" className="space-y-4">
@@ -108,45 +135,50 @@ export default function UserManagement() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Type</TableHead>
+                    <TableHead>Role</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pendingUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium text-foreground">{user.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                      <TableCell>
-                        <Badge variant={user.type === "Artist" ? "default" : "secondary"}>{user.type}</Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{user.date}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => setSelectedUser(user)}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-accent hover:text-accent"
-                            onClick={() => handleApproval(user, "approve")}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => handleApproval(user, "reject")}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
+                  {inactiveMembers.length > 0 ? (
+                    inactiveMembers.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium text-foreground">{user.fullName}</TableCell>
+                        <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                        <TableCell>
+                          <Badge variant={user.role === "Seller" ? "default" : "secondary"}>{user.role}</Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{formatDate(user.createdAt)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-accent hover:text-accent"
+                              onClick={() => handleApproval(user, "approve")}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => handleApproval(user, "reject")}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground">
+                        No pending registrations
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -157,16 +189,21 @@ export default function UserManagement() {
           <div className="flex gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Search users..." className="pl-10" />
+              <Input 
+                placeholder="Search users..." 
+                className="pl-10" 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-            <Select defaultValue="all">
+            <Select value={selectedRole} onValueChange={setSelectedRole}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="User Type" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="artist">Artists</SelectItem>
-                <SelectItem value="buyer">Buyers</SelectItem>
+                <SelectItem value="Seller">Sellers</SelectItem>
+                <SelectItem value="Buyer">Buyers</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -182,48 +219,37 @@ export default function UserManagement() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Type</TableHead>
+                    <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Joined</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {activeUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium text-foreground">{user.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                      <TableCell>
-                        <Badge variant={user.type === "Artist" ? "default" : "secondary"}>{user.type}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-accent border-accent">
-                          {user.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{user.joined}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon">
-                            <UserCog className="h-4 w-4" />
-                          </Button>
-                        </div>
+                  {activeMembers.length > 0 ? (
+                    activeMembers.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium text-foreground">{user.fullName}</TableCell>
+                        <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                        <TableCell>
+                          <Badge variant={user.role === "Seller" ? "default" : "secondary"}>{user.role}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-accent border-accent">
+                            Active
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{formatDate(user.createdAt)}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground">
+                        No active members
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="all" className="space-y-4">
-          <Card>
-            <CardContent className="flex items-center justify-center py-12">
-              <p className="text-muted-foreground">All users view coming soon</p>
             </CardContent>
           </Card>
         </TabsContent>
@@ -234,18 +260,26 @@ export default function UserManagement() {
           <DialogHeader>
             <DialogTitle>{approvalAction === "approve" ? "Approve" : "Reject"} User Registration</DialogTitle>
             <DialogDescription>
-              Are you sure you want to {approvalAction} the registration for {selectedUser?.name}?
+              Are you sure you want to {approvalAction} the registration for {selectedUser?.fullName}?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowApprovalDialog(false)}>
+            <Button variant="outline" onClick={() => setShowApprovalDialog(false)} disabled={actionLoading}>
               Cancel
             </Button>
             <Button
               variant={approvalAction === "approve" ? "default" : "destructive"}
-              onClick={() => setShowApprovalDialog(false)}
+              onClick={confirmApproval}
+              disabled={actionLoading}
             >
-              {approvalAction === "approve" ? "Approve" : "Reject"}
+              {actionLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                approvalAction === "approve" ? "Approve" : "Reject"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

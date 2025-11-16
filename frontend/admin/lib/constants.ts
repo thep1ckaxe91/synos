@@ -1,55 +1,45 @@
-// Constants and utility functions for the admin panel
+// Status and role mapping constants for admin dashboard
 
-// Transaction status normalization
-export function normalizeTransactionStatus(status: string): string {
-  if (!status) return 'pending'
-  
-  const normalizedStatus = status.toLowerCase().trim()
-  
-  switch (normalizedStatus) {
-    case 'completed':
-    case 'success':
-    case 'successful':
-    case 'paid':
-      return 'completed'
-    case 'pending':
-    case 'processing':
-    case 'in_progress':
-      return 'pending'
-    case 'failed':
-    case 'error':
-    case 'cancelled':
-    case 'canceled':
-      return 'failed'
-    case 'refunded':
-    case 'refund':
-      return 'refunded'
-    default:
-      return 'pending'
-  }
+export const ARTWORK_STATUS_MAP: Record<number, string> = {
+  0: 'Pending',
+  1: 'Approved',
+  2: 'Rejected',
+  3: 'Available',
+  4: 'Sold'
 }
 
-// Payment method constants
-export const PAYMENT_METHODS = {
-  VNPAY: 'vnpay',
-  PAYPAL: 'paypal',
-  STRIPE: 'stripe',
-  CASH: 'cash'
-} as const
+export const USER_ROLE_MAP: Record<number, string> = {
+  0: 'Buyer',
+  1: 'Seller'
+}
 
-// Transaction status options
-export const TRANSACTION_STATUS = {
-  PENDING: 'pending',
-  COMPLETED: 'completed',
-  FAILED: 'failed',
-  REFUNDED: 'refunded'
-} as const
+export const TRANSACTION_STATUS_MAP: Record<number, string> = {
+  0: 'Pending',
+  1: 'Completed',
+  2: 'Pending',
+  3: 'Rejected',
+  4: 'Shipped',
+  5: 'Delivered'
+}
 
-// Order status constants
-export const ORDER_STATUS = {
-  PENDING: 'pending',
-  CONFIRMED: 'confirmed',
-  SHIPPED: 'shipped',
-  DELIVERED: 'delivered',
-  CANCELLED: 'cancelled'
-} as const
+// Helper functions
+export function normalizeArtworkStatus(status: any): string {
+  if (typeof status === 'number') {
+    return ARTWORK_STATUS_MAP[status] || 'Unknown'
+  }
+  return String(status) || 'Unknown'
+}
+
+export function normalizeUserRole(role: any): string {
+  if (typeof role === 'number') {
+    return USER_ROLE_MAP[role] || 'Unknown'
+  }
+  return typeof role === 'string' ? role : 'Unknown'
+}
+
+export function normalizeTransactionStatus(status: any): string {
+  if (typeof status === 'number') {
+    return TRANSACTION_STATUS_MAP[status] || 'Unknown'
+  }
+  return String(status) || 'Unknown'
+}

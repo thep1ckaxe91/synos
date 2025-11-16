@@ -9,10 +9,10 @@ export interface Artwork {
   creationYear?: number
   dimensions?: string
   condition?: string
-  isFor: 'FixedPrice' | 'Auction'
+  isFor: 'FixedPrice' | 'Auction' | 'Both'
   fixedPrice?: number
   currency: string
-  status: 'Pending' | 'Approved' | 'Rejected'
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Available' | 'Sold'
   createdAt: string
   updatedAt: string
   deletedAt?: string
@@ -97,6 +97,61 @@ export interface UpdateCategoryDto {
   isActive: boolean
 }
 
+export interface Transaction {
+  id: number
+  userId: number
+  userName: string
+  userEmail: string
+  orderNumber: string
+  totalAmount: number
+  currency: string
+  paymentType: string
+  paymentTime: string
+  status: number | string
+  createdAt: string
+  updatedAt: string
+  deletedAt?: string
+  orderItems?: OrderItem[]
+  totalItems?: number
+  buyerName?: string
+}
+
+export interface OrderItem {
+  artworkId: number
+  artworkTitle: string
+  sellerName: string
+  price: number
+}
+
+export interface PurchaseRequest {
+  id: number
+  artwork: string
+  buyer: string
+  seller: string
+  amount: number
+  type: string
+  date: string
+  status: string
+}
+
+export interface Exhibition {
+  id: number
+  title: string
+  description: string
+  startDate?: string
+  endDate?: string
+  location: string
+  coverImage?: string
+  isActive: boolean
+  createdAt: string
+  deletedAt?: string
+  totalArtworks: number
+  totalVisitors: number
+  status?: string
+  artworks?: number
+  visitors?: number
+}
+
 export interface DashboardStats {
   totalMembers: number
   totalActiveMembers: number
@@ -112,12 +167,11 @@ export interface DashboardStats {
 }
 
 export interface ActivityItem {
-  id: number
-  type: 'artwork_submitted' | 'artwork_approved' | 'artwork_rejected' | 'member_registered'
-  title: string
+  activityType: string
   description: string
-  createdAt: string
-  relatedId?: number
+  timestamp: string
+  userName?: string
+  relatedEntity?: string
 }
 
 export interface PaginatedResponse<T> {
@@ -126,36 +180,6 @@ export interface PaginatedResponse<T> {
   page: number
   limit: number
   totalPages: number
-}
-
-export interface Transaction {
-  id: number
-  userId: number
-  userName: string
-  userEmail: string
-  orderNumber: string
-  totalAmount: number
-  currency: string
-  paymentType: string
-  paymentTime: string
-  status: string
-  createdAt: string
-  updatedAt: string
-  deletedAt?: string
-  orderItems: OrderItem[]
-  totalItems: number
-  buyerName: string
-  buyerEmail?: string
-}
-
-export interface OrderItem {
-  id: number
-  artworkId: number
-  artworkTitle: string
-  artworkImage?: string
-  quantity: number
-  unitPrice: number
-  totalPrice: number
 }
 
 export interface ApiError {

@@ -15,13 +15,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Search, Check, X, Eye, Edit, Trash2, ImageIcon, Loader2 } from "lucide-react"
+import { Search, Check, X, Eye, Edit, Trash2, ImageIcon, Loader2 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { apiService } from "@/lib/api-service"
 import { Artwork, Category } from "@/lib/types"
 import { toast } from "sonner"
+import { getImageUrl } from "@/lib/utils"
+import { normalizeArtworkStatus, ARTWORK_STATUS_MAP } from "@/lib/constants"
 
 export default function ArtworkManagement() {
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null)
@@ -56,13 +58,26 @@ export default function ArtworkManagement() {
         apiService.getCategories()
       ])
       
-      // Separate pending and approved artworks
-      const pending = artworksResponse.items?.filter((artwork: Artwork) => artwork.status === 'Pending') || []
-      const approved = artworksResponse.items?.filter((artwork: Artwork) => artwork.status !== 'Pending') || []
+      let artworksData: Artwork[] = []
+      if (Array.isArray(artworksResponse)) {
+        artworksData = artworksResponse
+      } else if (artworksResponse.items) {
+        artworksData = artworksResponse.items
+      } else if (artworksResponse.data) {
+        artworksData = artworksResponse.data
+      }
+      
+      const mappedArtworks = artworksData.map((item: any) => ({
+        ...item,
+        status: normalizeArtworkStatus(item.status)
+      }))
+      
+      const pending = mappedArtworks.filter((artwork: Artwork) => artwork.status === 'Pending')
+      const approved = mappedArtworks.filter((artwork: Artwork) => artwork.status !== 'Pending')
       
       setPendingArtworks(pending)
       setAllArtworks(approved)
-      setCategories(categoriesResponse || [])
+      setCategories(Array.isArray(categoriesResponse) ? categoriesResponse : categoriesResponse.data || [])
     } catch (error) {
       console.error('Failed to load data:', error)
       toast.error('Failed to load artworks')
@@ -170,10 +185,10 @@ export default function ArtworkManagement() {
                     <TableRow key={artwork.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
+                          <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center overflow-hidden">
                             {artwork.images && artwork.images.length > 0 ? (
                               <img 
-                                src={artwork.images[0].imageUrl} 
+                                src={getImageUrl(artwork.images[0].imageUrl) || "/placeholder.svg"} 
                                 alt={artwork.title}
                                 className="h-10 w-10 rounded-md object-cover"
                               />
@@ -254,9 +269,9 @@ export default function ArtworkManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="Approved">Approved</SelectItem>
                 <SelectItem value="Available">Available</SelectItem>
                 <SelectItem value="Sold">Sold</SelectItem>
-                <SelectItem value="Approved">Approved</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -284,10 +299,10 @@ export default function ArtworkManagement() {
                     <TableRow key={artwork.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
+                          <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center overflow-hidden">
                             {artwork.images && artwork.images.length > 0 ? (
                               <img 
-                                src={artwork.images[0].imageUrl} 
+                                src={getImageUrl(artwork.images[0].imageUrl) || "/placeholder.svg"} 
                                 alt={artwork.title}
                                 className="h-10 w-10 rounded-md object-cover"
                               />
