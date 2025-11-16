@@ -16,7 +16,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import DashboardLayout from '@/components/dashboard-layout'
 import ApprovalDialog from '@/components/approval-dialog'
-import { mockMembers } from '@/lib/mock-data'
+import { apiClient } from '@/lib/api-client'
 
 interface Member {
   id: number
@@ -51,13 +51,10 @@ export default function MembersContent() {
 
   const fetchMembers = async () => {
     try {
-      const response = await fetch('/api/admin/members')
-      if (!response.ok) throw new Error('API not available')
-      const data = await response.json()
+      const data = await apiClient.admin.getMembers()
       setMembers(data)
     } catch (error) {
-      console.log('[v0] Using mock data for members')
-      setMembers(mockMembers)
+      console.error('[v0] Members fetch error:', error)
     } finally {
       setIsLoading(false)
     }
@@ -101,26 +98,16 @@ export default function MembersContent() {
     if (!selectedMember) return
 
     try {
-      const endpoint = dialogType === 'approve' ? 'approve' : 'reject'
-      const response = await fetch(`/api/admin/members/${selectedMember.id}/${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: dialogType === 'reject' ? JSON.stringify({ reason }) : undefined,
-      })
-
-      if (response.ok) {
-        await fetchMembers()
-        setIsDialogOpen(false)
+      if (dialogType === 'approve') {
+        await apiClient.admin.approveMember(selectedMember.id)
+      } else {
+        await apiClient.admin.rejectMember(selectedMember.id, reason || '')
       }
+      
+      await fetchMembers()
+      setIsDialogOpen(false)
     } catch (error) {
-      console.log(`[v0] Mock ${dialogType} action`)
-      setMembers((prev) =>
-        prev.map((m) =>
-          m.id === selectedMember.id
-            ? { ...m, status: dialogType === 'approve' ? 'Approved' : 'Rejected' }
-            : m
-        )
-      )
+      console.error(`[v0] ${dialogType} action error:`, error)
       setIsDialogOpen(false)
     }
   }

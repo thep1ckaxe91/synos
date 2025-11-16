@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/table'
 import DashboardLayout from '@/components/dashboard-layout'
 import ApprovalDialog from '@/components/approval-dialog'
-import { mockTransactions } from '@/lib/mock-data'
+import { apiClient } from '@/lib/api-client'
 
 interface Transaction {
   id: number
@@ -49,13 +49,10 @@ export default function TransactionsContent() {
 
   const fetchTransactions = async () => {
     try {
-      const response = await fetch('/api/admin/transactions')
-      if (!response.ok) throw new Error('API not available')
-      const data = await response.json()
+      const data = await apiClient.admin.getTransactions()
       setTransactions(data)
     } catch (error) {
-      console.log('[v0] Using mock data for transactions')
-      setTransactions(mockTransactions)
+      console.error('[v0] Transactions fetch error:', error)
     } finally {
       setIsLoading(false)
     }
@@ -91,26 +88,16 @@ export default function TransactionsContent() {
     if (!selectedTransaction) return
 
     try {
-      const endpoint = dialogType === 'approve' ? 'approve' : 'reject'
-      const response = await fetch(`/api/admin/purchase-requests/${selectedTransaction.id}/${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: dialogType === 'reject' ? JSON.stringify({ reason, adminNote: reason }) : JSON.stringify({}),
-      })
-
-      if (response.ok) {
-        await fetchTransactions()
-        setIsDialogOpen(false)
+      if (dialogType === 'approve') {
+        await apiClient.admin.approveTransaction(selectedTransaction.id)
+      } else {
+        await apiClient.admin.rejectTransaction(selectedTransaction.id, reason || '')
       }
+
+      await fetchTransactions()
+      setIsDialogOpen(false)
     } catch (error) {
-      console.log(`[v0] Mock ${dialogType} action`)
-      setTransactions((prev) =>
-        prev.map((t) =>
-          t.id === selectedTransaction.id
-            ? { ...t, status: dialogType === 'approve' ? 'Completed' : 'Cancelled' }
-            : t
-        )
-      )
+      console.error(`[v0] ${dialogType} action error:`, error)
       setIsDialogOpen(false)
     }
   }

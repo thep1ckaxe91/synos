@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import DashboardLayout from '@/components/dashboard-layout'
-import { mockDashboardStats } from '@/lib/mock-data'
+import { apiClient } from '@/lib/api-client'
 
 interface DashboardStats {
   totalMembers: number
@@ -29,14 +29,10 @@ export default function DashboardContent() {
 
   const fetchDashboardStats = async () => {
     try {
-      const response = await fetch('/api/admin/dashboard')
-      if (!response.ok) throw new Error('API not available')
-      const data = await response.json()
+      const data = await apiClient.admin.getDashboardStats()
       setStats(data)
     } catch (error) {
-      console.log('[v0] Using mock data for dashboard')
-      // Use mock data as fallback
-      setStats(mockDashboardStats)
+      console.error('[v0] Dashboard fetch error:', error)
     } finally {
       setIsLoading(false)
     }

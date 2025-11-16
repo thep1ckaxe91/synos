@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import DashboardLayout from '@/components/dashboard-layout'
 import ApprovalDialog from '@/components/approval-dialog'
 import ArtworkDialog from '@/components/artwork-dialog'
-import { mockArtworks } from '@/lib/mock-data'
+import { apiClient } from '@/lib/api-client'
 
 interface Artwork {
   id: number
@@ -55,13 +55,10 @@ export default function ArtworksContent() {
 
   const fetchArtworks = async () => {
     try {
-      const response = await fetch('/api/admin/artworks')
-      if (!response.ok) throw new Error('API not available')
-      const data = await response.json()
+      const data = await apiClient.admin.getArtworks()
       setArtworks(data)
     } catch (error) {
-      console.log('[v0] Using mock data for artworks')
-      setArtworks(mockArtworks)
+      console.error('[v0] Artworks fetch error:', error)
     } finally {
       setIsLoading(false)
     }
@@ -80,9 +77,9 @@ export default function ArtworksContent() {
 
     if (searchQuery) {
       filtered = filtered.filter(
-          (a) =>
-              a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              a.sellerName.toLowerCase().includes(searchQuery.toLowerCase())
+        (a) =>
+          a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          a.sellerName.toLowerCase().includes(searchQuery.toLowerCase())
       )
     }
 
@@ -110,26 +107,16 @@ export default function ArtworksContent() {
     if (!selectedArtwork) return
 
     try {
-      const endpoint = dialogType === 'approve' ? 'approve' : 'reject'
-      const response = await fetch(`/api/admin/artworks/${selectedArtwork.id}/${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: dialogType === 'reject' ? JSON.stringify({ reason, adminNote: reason }) : undefined,
-      })
-
-      if (response.ok) {
-        await fetchArtworks()
-        setIsDialogOpen(false)
+      if (dialogType === 'approve') {
+        await apiClient.admin.approveArtwork(selectedArtwork.id)
+      } else {
+        await apiClient.admin.rejectArtwork(selectedArtwork.id, reason || '')
       }
+
+      await fetchArtworks()
+      setIsDialogOpen(false)
     } catch (error) {
-      console.log(`[v0] Mock ${dialogType} action`)
-      setArtworks((prev) =>
-          prev.map((a) =>
-              a.id === selectedArtwork.id
-                  ? { ...a, status: dialogType === 'approve' ? 'Approved' : 'Rejected' }
-                  : a
-          )
-      )
+      console.error(`[v0] ${dialogType} action error:`, error)
       setIsDialogOpen(false)
     }
   }
@@ -138,16 +125,10 @@ export default function ArtworksContent() {
     if (!confirm('Are you sure you want to delete this artwork?')) return
 
     try {
-      const response = await fetch(`/api/admin/artworks/${artworkId}`, {
-        method: 'DELETE',
-      })
-
-      if (response.ok) {
-        await fetchArtworks()
-      }
+      await apiClient.admin.deleteArtwork(artworkId)
+      await fetchArtworks()
     } catch (error) {
-      console.log('[v0] Mock delete action')
-      setArtworks((prev) => prev.filter((a) => a.id !== artworkId))
+      console.error('[v0] Delete action error:', error)
     }
   }
 
@@ -170,135 +151,135 @@ export default function ArtworksContent() {
   const pendingCount = artworks.filter((a) => a.status === 'PendingApproval').length
 
   return (
-      <DashboardLayout>
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Artwork Management</h1>
-              <p className="text-muted-foreground">Manage artwork submissions and catalog</p>
-            </div>
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Artwork Management</h1>
+            <p className="text-muted-foreground">Manage artwork submissions and catalog</p>
           </div>
-
-          <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-            <div className="flex items-center justify-between">
-              <TabsList>
-                <TabsTrigger value="all">All Artworks</TabsTrigger>
-                <TabsTrigger value="pending">
-                  Pending {pendingCount > 0 && <span className="ml-1">({pendingCount})</span>}
-                </TabsTrigger>
-                <TabsTrigger value="approved">Approved</TabsTrigger>
-                <TabsTrigger value="rejected">Rejected</TabsTrigger>
-              </TabsList>
-              <Input
-                  placeholder="Search artworks..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="max-w-xs"
-              />
-            </div>
-
-            <TabsContent value={selectedTab} className="mt-6">
-              <div className="border rounded-lg">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Seller</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isLoading ? (
-                        Array.from({ length: 5 }).map((_, i) => (
-                            <TableRow key={i}>
-                              <TableCell colSpan={8}>
-                                <Skeleton className="h-10 w-full" />
-                              </TableCell>
-                            </TableRow>
-                        ))
-                    ) : filteredArtworks.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                            No artworks found
-                          </TableCell>
-                        </TableRow>
-                    ) : (
-                        filteredArtworks.map((artwork) => (
-                            <TableRow key={artwork.id}>
-                              <TableCell className="font-medium">{artwork.title}</TableCell>
-                              <TableCell>{artwork.sellerName}</TableCell>
-                              <TableCell>{artwork.categoryName || 'Uncategorized'}</TableCell>
-                              <TableCell className="capitalize">{artwork.isFor}</TableCell>
-                              <TableCell>
-                                {artwork.fixedPrice
-                                    ? `${artwork.currency} ${artwork.fixedPrice.toFixed(2)}`
-                                    : 'N/A'}
-                              </TableCell>
-                              <TableCell>{getStatusBadge(artwork.status)}</TableCell>
-                              <TableCell>{new Date(artwork.createdAt).toLocaleDateString()}</TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex gap-2 justify-end">
-                                  <Button size="sm" variant="outline" onClick={() => handleView(artwork)}>
-                                    View
-                                  </Button>
-                                  {artwork.status === 'PendingApproval' && (
-                                      <>
-                                        <Button size="sm" onClick={() => handleApprove(artwork)}>
-                                          Approve
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="destructive"
-                                            onClick={() => handleReject(artwork)}
-                                        >
-                                          Reject
-                                        </Button>
-                                      </>
-                                  )}
-                                  {artwork.status !== 'PendingApproval' && (
-                                      <Button
-                                          size="sm"
-                                          variant="destructive"
-                                          onClick={() => handleDelete(artwork.id)}
-                                      >
-                                        Delete
-                                      </Button>
-                                  )}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                        ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </TabsContent>
-          </Tabs>
         </div>
 
-        <ApprovalDialog
-            isOpen={isDialogOpen}
-            onClose={() => setIsDialogOpen(false)}
-            onConfirm={handleConfirmAction}
-            type={dialogType}
-            title={dialogType === 'approve' ? 'Approve Artwork' : 'Reject Artwork'}
-            description={
-              dialogType === 'approve'
-                  ? `Are you sure you want to approve "${selectedArtwork?.title}"?`
-                  : `Are you sure you want to reject "${selectedArtwork?.title}"? This action requires a reason.`
-            }
-        />
+        <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+          <div className="flex items-center justify-between">
+            <TabsList>
+              <TabsTrigger value="all">All Artworks</TabsTrigger>
+              <TabsTrigger value="pending">
+                Pending {pendingCount > 0 && <span className="ml-1">({pendingCount})</span>}
+              </TabsTrigger>
+              <TabsTrigger value="approved">Approved</TabsTrigger>
+              <TabsTrigger value="rejected">Rejected</TabsTrigger>
+            </TabsList>
+            <Input
+              placeholder="Search artworks..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="max-w-xs"
+            />
+          </div>
 
-        <ArtworkDialog
-            isOpen={isViewDialogOpen}
-            onClose={() => setIsViewDialogOpen(false)}
-            artwork={selectedArtwork}
-        />
-      </DashboardLayout>
+          <TabsContent value={selectedTab} className="mt-6">
+            <div className="border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Seller</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell colSpan={8}>
+                          <Skeleton className="h-10 w-full" />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : filteredArtworks.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                        No artworks found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredArtworks.map((artwork) => (
+                      <TableRow key={artwork.id}>
+                        <TableCell className="font-medium">{artwork.title}</TableCell>
+                        <TableCell>{artwork.sellerName}</TableCell>
+                        <TableCell>{artwork.categoryName || 'Uncategorized'}</TableCell>
+                        <TableCell className="capitalize">{artwork.isFor}</TableCell>
+                        <TableCell>
+                          {artwork.fixedPrice
+                            ? `${artwork.currency} ${artwork.fixedPrice.toFixed(2)}`
+                            : 'N/A'}
+                        </TableCell>
+                        <TableCell>{getStatusBadge(artwork.status)}</TableCell>
+                        <TableCell>{new Date(artwork.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex gap-2 justify-end">
+                            <Button size="sm" variant="outline" onClick={() => handleView(artwork)}>
+                              View
+                            </Button>
+                            {artwork.status === 'PendingApproval' && (
+                              <>
+                                <Button size="sm" onClick={() => handleApprove(artwork)}>
+                                  Approve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleReject(artwork)}
+                                >
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                            {artwork.status !== 'PendingApproval' && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDelete(artwork.id)}
+                              >
+                                Delete
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      <ApprovalDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        onConfirm={handleConfirmAction}
+        type={dialogType}
+        title={dialogType === 'approve' ? 'Approve Artwork' : 'Reject Artwork'}
+        description={
+          dialogType === 'approve'
+            ? `Are you sure you want to approve "${selectedArtwork?.title}"?`
+            : `Are you sure you want to reject "${selectedArtwork?.title}"? This action requires a reason.`
+        }
+      />
+
+      <ArtworkDialog
+        isOpen={isViewDialogOpen}
+        onClose={() => setIsViewDialogOpen(false)}
+        artwork={selectedArtwork}
+      />
+    </DashboardLayout>
   )
 }

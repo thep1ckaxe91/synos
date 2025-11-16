@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/table'
 import DashboardLayout from '@/components/dashboard-layout'
 import ExhibitionDialog from '@/components/exhibition-dialog'
-import { mockExhibitions } from '@/lib/mock-data'
+import { apiClient } from '@/lib/api-client'
 
 interface Exhibition {
   id: number
@@ -48,27 +48,10 @@ export default function ExhibitionsContent() {
 
   const fetchExhibitions = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
-      if (!apiUrl) {
-        console.log('[v0] Using mock data for exhibitions')
-        setExhibitions(mockExhibitions as any)
-        setIsLoading(false)
-        return
-      }
-
-      const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null
-      const response = await fetch(`${apiUrl}/api/admin/exhibitions`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      })
-      
-      if (!response.ok) throw new Error('Failed to fetch')
-      
-      const data = await response.json()
+      const data = await apiClient.admin.getExhibitions()
       setExhibitions(data)
     } catch (error) {
-      console.log('[v0] Exhibitions fetch error:', error)
-      console.log('[v0] Using mock data for exhibitions')
-      setExhibitions(mockExhibitions as any)
+      console.error('[v0] Exhibitions fetch error:', error)
     } finally {
       setIsLoading(false)
     }
@@ -101,72 +84,24 @@ export default function ExhibitionsContent() {
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this exhibition?')) return
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
-    if (!apiUrl) {
-      setExhibitions((prev) => prev.filter((e) => e.id !== id))
-      return
-    }
-
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null
-      const response = await fetch(`${apiUrl}/api/admin/exhibitions/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ reason: 'Deleted by admin' }),
-      })
-
-      if (response.ok) {
-        await fetchExhibitions()
-      }
+      await apiClient.admin.deleteExhibition(id)
+      await fetchExhibitions()
     } catch (error) {
       console.error('[v0] Error deleting exhibition:', error)
-      setExhibitions((prev) => prev.filter((e) => e.id !== id))
     }
   }
 
   const handleSave = async (data: any) => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
-    if (!apiUrl) {
-      if (isCreateMode) {
-        const newExhibition = {
-          id: Math.max(...exhibitions.map((e) => e.id), 0) + 1,
-          ...data,
-          totalArtworks: 0,
-          createdAt: new Date().toISOString(),
-        }
-        setExhibitions((prev) => [...prev, newExhibition])
-      } else if (selectedExhibition) {
-        setExhibitions((prev) =>
-          prev.map((e) => (e.id === selectedExhibition.id ? { ...e, ...data } : e))
-        )
-      }
-      setIsDialogOpen(false)
-      return
-    }
-
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null
-      const endpoint = isCreateMode
-        ? `${apiUrl}/api/admin/exhibitions`
-        : `${apiUrl}/api/admin/exhibitions/${selectedExhibition?.id}`
-      const method = isCreateMode ? 'POST' : 'PUT'
-
-      const response = await fetch(endpoint, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(data),
-      })
-
-      if (response.ok) {
-        await fetchExhibitions()
-        setIsDialogOpen(false)
+      if (isCreateMode) {
+        await apiClient.admin.createExhibition(data)
+      } else if (selectedExhibition) {
+        await apiClient.admin.updateExhibition(selectedExhibition.id, data)
       }
+
+      await fetchExhibitions()
+      setIsDialogOpen(false)
     } catch (error) {
       console.error('[v0] Error saving exhibition:', error)
     }

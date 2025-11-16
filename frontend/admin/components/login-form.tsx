@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { apiClient } from '@/lib/api-client'
 
 export default function LoginForm() {
   const router = useRouter()
@@ -20,23 +21,13 @@ export default function LoginForm() {
     setError('')
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        localStorage.setItem('adminToken', data.token)
-        localStorage.setItem('adminUser', JSON.stringify(data.admin))
-        router.push('/dashboard')
-      } else {
-        setError(data.message || 'Login failed')
-      }
-    } catch (err) {
-      setError('An error occurred. Please try again.')
+      const data = await apiClient.auth.login({ email, password })
+      
+      localStorage.setItem('adminToken', data.token)
+      localStorage.setItem('adminUser', JSON.stringify(data.user))
+      router.push('/dashboard')
+    } catch (err: any) {
+      setError(err.message || 'Login failed. Please check your credentials.')
     } finally {
       setIsLoading(false)
     }
