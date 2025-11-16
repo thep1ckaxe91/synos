@@ -6,11 +6,11 @@ import { apiClient } from '@/lib/api-client';
 interface User {
   id: number;
   email: string;
+  fullName: string;
   name: string;
   role: string;
-  age?: number;
+  phone?: string;
   bio?: string;
-  interests?: string;
 }
 
 interface AuthContextType {
@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       const response = await apiClient.auth.login({ email, password });
-      
+
       if (response.success && response.token) {
         setToken(response.token);
         setUser(response.member);
@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (data: any) => {
     try {
       const response = await apiClient.auth.register(data);
-      
+
       if (response.success && response.token) {
         setToken(response.token);
         setUser(response.member);
@@ -108,9 +108,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, refreshUser }}>
-      {children}
-    </AuthContext.Provider>
+      <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, refreshUser }}>
+        {children}
+      </AuthContext.Provider>
   );
 }
 

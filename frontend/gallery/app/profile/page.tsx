@@ -18,11 +18,11 @@ export default function ProfilePage() {
   const { user, token, refreshUser } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [profileData, setProfileData] = useState({
-    name: '',
-    age: '',
+    fullName: '',
+    phone: '',
     bio: '',
-    interests: '',
   });
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -35,39 +35,52 @@ export default function ProfilePage() {
       router.push('/login');
       return;
     }
-    
-    setProfileData({
-      name: user.name || '',
-      age: user.age?.toString() || '',
-      bio: user.bio || '',
-      interests: user.interests || '',
-    });
-  }, [user, router]);
+
+    const fetchProfile = async () => {
+      try {
+        setIsFetching(true);
+        const profile = await apiClient.members.getProfile(user.id, token!);
+        setProfileData({
+          fullName: profile.fullName || '',
+          phone: profile.phone || '',
+          bio: profile.bio || '',
+        });
+      } catch (error: any) {
+        console.error('[v0] Failed to fetch profile:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load profile data',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsFetching(false);
+      }
+    };
+
+    fetchProfile();
+  }, [user, token, router, toast]);
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user || !token) return;
 
     try {
       setIsLoading(true);
       const updateData: any = {
-        name: profileData.name,
+        fullName: profileData.fullName,
       };
 
-      if (profileData.age) {
-        updateData.age = parseInt(profileData.age);
+      if (profileData.phone) {
+        updateData.phone = profileData.phone;
       }
       if (profileData.bio) {
         updateData.bio = profileData.bio;
       }
-      if (profileData.interests) {
-        updateData.interests = profileData.interests;
-      }
 
       await apiClient.members.updateProfile(user.id, updateData, token);
       await refreshUser();
-      
+
       toast({
         title: 'Profile Updated',
         description: 'Your profile has been successfully updated',
@@ -85,7 +98,7 @@ export default function ProfilePage() {
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user || !token) return;
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
@@ -109,20 +122,20 @@ export default function ProfilePage() {
     try {
       setIsLoading(true);
       await apiClient.members.changePassword(
-        user.id,
-        {
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword,
-        },
-        token
+          user.id,
+          {
+            currentPassword: passwordData.currentPassword,
+            newPassword: passwordData.newPassword,
+          },
+          token
       );
-      
+
       setPasswordData({
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
       });
-      
+
       toast({
         title: 'Password Changed',
         description: 'Your password has been successfully updated',
@@ -142,169 +155,166 @@ export default function ProfilePage() {
     return null;
   }
 
-  return (
-    <div className="min-h-screen py-12">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <div className="mb-8">
-          <h1 className="font-serif text-4xl mb-2">Profile Settings</h1>
-          <p className="text-muted-foreground">Manage your account settings and preferences</p>
+  if (isFetching) {
+    return (
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
+    );
+  }
 
-        <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="profile">
-              <User className="h-4 w-4 mr-2" />
-              Profile
-            </TabsTrigger>
-            <TabsTrigger value="security">
-              <Lock className="h-4 w-4 mr-2" />
-              Security
-            </TabsTrigger>
-          </TabsList>
+  return (
+      <div className="min-h-screen py-12">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="mb-8">
+            <h1 className="font-serif text-4xl mb-2">Profile Settings</h1>
+            <p className="text-muted-foreground">Manage your account settings and preferences</p>
+          </div>
 
-          <TabsContent value="profile">
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Information</CardTitle>
-                <CardDescription>
-                  Update your personal information and preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleProfileUpdate} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={user.email}
-                      disabled
-                      className="bg-muted"
-                    />
-                    <p className="text-xs text-muted-foreground">Email cannot be changed</p>
-                  </div>
+          <Tabs defaultValue="profile" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="profile">
+                <User className="h-4 w-4 mr-2" />
+                Profile
+              </TabsTrigger>
+              <TabsTrigger value="security">
+                <Lock className="h-4 w-4 mr-2" />
+                Security
+              </TabsTrigger>
+            </TabsList>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="role">Role</Label>
-                    <Input
-                      id="role"
-                      value={user.role}
-                      disabled
-                      className="bg-muted capitalize"
-                    />
-                  </div>
+            <TabsContent value="profile">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Profile Information</CardTitle>
+                  <CardDescription>
+                    Update your personal information and preferences
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleProfileUpdate} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                          id="email"
+                          type="email"
+                          value={user.email}
+                          disabled
+                          className="bg-muted"
+                      />
+                      <p className="text-xs text-muted-foreground">Email cannot be changed</p>
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input
-                      id="name"
-                      type="text"
-                      value={profileData.name}
-                      onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                      disabled={isLoading}
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="role">Role</Label>
+                      <Input
+                          id="role"
+                          value={user.role}
+                          disabled
+                          className="bg-muted capitalize"
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="age">Age</Label>
-                    <Input
-                      id="age"
-                      type="number"
-                      value={profileData.age}
-                      onChange={(e) => setProfileData({ ...profileData, age: e.target.value })}
-                      disabled={isLoading}
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="fullName">Full Name</Label>
+                      <Input
+                          id="fullName"
+                          type="text"
+                          value={profileData.fullName}
+                          onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
+                          disabled={isLoading}
+                      />
+                    </div>
+c
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone</Label>
+                      <Input
+                          id="phone"
+                          type="tel"
+                          value={profileData.phone}
+                          onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                          disabled={isLoading}
+                          placeholder="+1 234 567 8900"
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="bio">Bio</Label>
-                    <Textarea
-                      id="bio"
-                      value={profileData.bio}
-                      onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-                      disabled={isLoading}
-                      rows={4}
-                      placeholder="Tell us about yourself..."
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="bio">Bio</Label>
+                      <Textarea
+                          id="bio"
+                          value={profileData.bio}
+                          onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
+                          disabled={isLoading}
+                          rows={4}
+                          placeholder="Tell us about yourself..."
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="interests">Interests</Label>
-                    <Input
-                      id="interests"
-                      type="text"
-                      value={profileData.interests}
-                      onChange={(e) => setProfileData({ ...profileData, interests: e.target.value })}
-                      disabled={isLoading}
-                      placeholder="Contemporary art, sculpture, abstract..."
-                    />
-                  </div>
+                    <Button type="submit" disabled={isLoading}>
+                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Save Changes
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Save Changes
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
+            <TabsContent value="security">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Change Password</CardTitle>
+                  <CardDescription>
+                    Update your password to keep your account secure
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handlePasswordChange} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="currentPassword">Current Password</Label>
+                      <Input
+                          id="currentPassword"
+                          type="password"
+                          value={passwordData.currentPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                          disabled={isLoading}
+                          required
+                      />
+                    </div>
 
-          <TabsContent value="security">
-            <Card>
-              <CardHeader>
-                <CardTitle>Change Password</CardTitle>
-                <CardDescription>
-                  Update your password to keep your account secure
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handlePasswordChange} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="currentPassword">Current Password</Label>
-                    <Input
-                      id="currentPassword"
-                      type="password"
-                      value={passwordData.currentPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                      disabled={isLoading}
-                      required
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="newPassword">New Password</Label>
+                      <Input
+                          id="newPassword"
+                          type="password"
+                          value={passwordData.newPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                          disabled={isLoading}
+                          required
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="newPassword">New Password</Label>
-                    <Input
-                      id="newPassword"
-                      type="password"
-                      value={passwordData.newPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                      disabled={isLoading}
-                      required
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                      <Input
+                          id="confirmPassword"
+                          type="password"
+                          value={passwordData.confirmPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                          disabled={isLoading}
+                          required
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      value={passwordData.confirmPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                      disabled={isLoading}
-                      required
-                    />
-                  </div>
-
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Change Password
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                    <Button type="submit" disabled={isLoading}>
+                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Change Password
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
-    </div>
   );
 }

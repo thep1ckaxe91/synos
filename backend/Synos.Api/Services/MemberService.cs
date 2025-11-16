@@ -118,7 +118,7 @@ namespace Synos.Api.Services
                     Role = role,
                     Bio = registerDto.Bio,
                     ProfileImage = registerDto.ProfileImage,
-                    IsActive = false, // New members are inactive by default
+                    IsActive = true, // New members are active by default
                     CreatedAt = TimeUtils.GetCreateTimestamp(),
                     UpdatedAt = TimeUtils.GetCreateTimestamp()
                 };
