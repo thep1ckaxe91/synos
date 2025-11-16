@@ -345,6 +345,7 @@ namespace Synos.Api.Repositories
 
         public async Task<IEnumerable<AdminExhibitionViewDto>> GetExhibitionsForAdminAsync(int skip = 0, int take = 50)
         {
+            var currentTime = TimeUtils.GetCurrentTime();
             return await _context.Exhibitions
                 .Include(e => e.ExhibitionArtworks)
                 .Select(e => new AdminExhibitionViewDto
@@ -355,6 +356,8 @@ namespace Synos.Api.Repositories
                     Location = e.Location ?? string.Empty,
                     StartDate = e.StartDate,
                     EndDate = e.EndDate,
+                    IsActive = e.DeletedAt == null && e.StartDate.HasValue && e.EndDate.HasValue && 
+                              e.StartDate <= currentTime && e.EndDate >= currentTime,
                     CreatedAt = e.CreatedAt,
                     DeletedAt = e.DeletedAt,
                     TotalArtworks = e.ExhibitionArtworks.Count,
@@ -368,6 +371,7 @@ namespace Synos.Api.Repositories
 
         public async Task<AdminExhibitionViewDto?> GetExhibitionDetailsForAdminAsync(long exhibitionId)
         {
+            var currentTime = TimeUtils.GetCurrentTime();
             return await _context.Exhibitions
                 .Include(e => e.ExhibitionArtworks)
                 .Where(e => e.Id == exhibitionId)
@@ -379,6 +383,8 @@ namespace Synos.Api.Repositories
                     Location = e.Location ?? string.Empty,
                     StartDate = e.StartDate,
                     EndDate = e.EndDate,
+                    IsActive = e.DeletedAt == null && e.StartDate.HasValue && e.EndDate.HasValue && 
+                              e.StartDate <= currentTime && e.EndDate >= currentTime,
                     CreatedAt = e.CreatedAt,
                     DeletedAt = e.DeletedAt,
                     TotalArtworks = e.ExhibitionArtworks.Count,

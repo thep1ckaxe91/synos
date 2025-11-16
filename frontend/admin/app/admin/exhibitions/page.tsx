@@ -58,16 +58,17 @@ export default function ExhibitionManagement() {
       }
       
       const mappedExhibitions: Exhibition[] = exhibitionsData.map((item: any) => {
-        const now = new Date();
-        const startDate = new Date(item.startDate);
-        const endDate = new Date(item.endDate);
-        let status = 'Inactive';
-        if (startDate <= now && endDate >= now) {
-          status = 'Active';
-        } else if (startDate > now) {
-          status = 'Upcoming';
-        } else if (endDate < now) {
-          status = 'Past';
+        let status;
+        if (item.isActive) {
+            status = 'Active';
+        } else {
+            const now = new Date();
+            const startDate = new Date(item.startDate);
+            if (startDate > now) {
+                status = 'Upcoming';
+            } else {
+                status = 'Past';
+            }
         }
 
         return {
@@ -84,7 +85,8 @@ export default function ExhibitionManagement() {
           totalVisitors: item.totalVisitors || 0,
           artworks: item.totalArtworks || 0,
           visitors: item.totalVisitors || 0,
-          status: status
+          status: status,
+          isActive: item.isActive
         }
       })
       
