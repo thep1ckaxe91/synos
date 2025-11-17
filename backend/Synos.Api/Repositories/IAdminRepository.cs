@@ -40,6 +40,7 @@ namespace Synos.Api.Repositories
         // Exhibition Management - Admin Views Only
         Task<IEnumerable<AdminExhibitionViewDto>> GetExhibitionsForAdminAsync(int skip = 0, int take = 50);
         Task<AdminExhibitionViewDto?> GetExhibitionDetailsForAdminAsync(long exhibitionId);
+        Task UpdateExhibitionArtworksAsync(long exhibitionId, UpdateExhibitionArtworksDto dto);
 
         // ===========================================
         // DASHBOARD & ANALYTICS

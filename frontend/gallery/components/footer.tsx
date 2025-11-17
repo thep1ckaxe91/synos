@@ -20,11 +20,7 @@ export function Footer() {
                   Browse Artworks
                 </Link>
               </li>
-              <li>
-                <Link href="/auctions" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Active Auctions
-                </Link>
-              </li>
+              {/* Auction link removed - only available to authenticated users */}
               <li>
                 <Link href="/exhibitions" className="text-muted-foreground hover:text-foreground transition-colors">
                   Exhibitions

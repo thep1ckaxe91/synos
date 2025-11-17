@@ -20,9 +20,6 @@ namespace Synos.Api.Controllers
             _logger = logger;
         }
 
-        // ===========================================
-        // AUTHENTICATION ENDPOINTS
-        // ===========================================
 
         /// <summary>
         /// Admin login
@@ -106,9 +103,6 @@ namespace Synos.Api.Controllers
             }
         }
 
-        // ===========================================
-        // MEMBER MANAGEMENT ENDPOINTS
-        // ===========================================
 
         /// <summary>
         /// Get all members for admin view
@@ -212,9 +206,6 @@ namespace Synos.Api.Controllers
             }
         }
 
-        // ===========================================
-        // ARTWORK MANAGEMENT ENDPOINTS
-        // ===========================================
 
         /// <summary>
         /// Get all artworks for admin view
@@ -424,9 +415,6 @@ namespace Synos.Api.Controllers
             }
         }
 
-        // ===========================================
-        // TRANSACTION MANAGEMENT ENDPOINTS
-        // ===========================================
 
         /// <summary>
         /// Get all transactions for admin monitoring
@@ -495,9 +483,6 @@ namespace Synos.Api.Controllers
             }
         }
 
-        // ===========================================
-        // EXHIBITION MANAGEMENT ENDPOINTS
-        // ===========================================
 
         /// <summary>
         /// Get all exhibitions for admin view
@@ -746,6 +731,27 @@ namespace Synos.Api.Controllers
             {
                 _logger.LogError(ex, "Error updating exhibition with ID {ExhibitionId}", exhibitionId);
                 return StatusCode(500, new { Message = "An error occurred while updating exhibition" });
+            }
+        }
+
+        [HttpPut("exhibitions/{exhibitionId}/artworks")]
+        [JwtAuthorize("Admin")]
+        public async Task<IActionResult> UpdateExhibitionArtworks(long exhibitionId, [FromBody] UpdateExhibitionArtworksDto dto)
+        {
+            try
+            {
+                await _adminService.UpdateExhibitionArtworksAsync(exhibitionId, dto);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Exhibition not found when trying to update artworks for exhibition ID {ExhibitionId}", exhibitionId);
+                return NotFound(new { Message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating artworks for exhibition with ID {ExhibitionId}", exhibitionId);
+                return StatusCode(500, new { Message = "An error occurred while updating exhibition artworks" });
             }
         }
 

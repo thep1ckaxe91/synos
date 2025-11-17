@@ -345,8 +345,11 @@ namespace Synos.Api.Repositories
 
         public async Task<IEnumerable<AdminExhibitionViewDto>> GetExhibitionsForAdminAsync(int skip = 0, int take = 50)
         {
+            var currentTime = TimeUtils.GetCurrentTime();
             return await _context.Exhibitions
                 .Include(e => e.ExhibitionArtworks)
+                    .ThenInclude(ea => ea.Artwork)
+                        .ThenInclude(a => a.ArtworkImages)
                 .Select(e => new AdminExhibitionViewDto
                 {
                     Id = e.Id,
@@ -355,10 +358,20 @@ namespace Synos.Api.Repositories
                     Location = e.Location ?? string.Empty,
                     StartDate = e.StartDate,
                     EndDate = e.EndDate,
+                    IsActive = e.DeletedAt == null && e.StartDate.HasValue && e.EndDate.HasValue && 
+                              e.StartDate <= currentTime && e.EndDate >= currentTime,
                     CreatedAt = e.CreatedAt,
                     DeletedAt = e.DeletedAt,
                     TotalArtworks = e.ExhibitionArtworks.Count,
-                    TotalVisitors = 0 // Placeholder - implement visitor tracking later
+                    TotalVisitors = 0, // Placeholder - implement visitor tracking later
+                    Artworks = e.ExhibitionArtworks.Select(ea => new ExhibitionArtworkDetailDto
+                    {
+                        ArtworkId = ea.ArtworkId,
+                        ArtworkTitle = ea.Artwork.Title,
+                        PrimaryImageUrl = ea.Artwork.ArtworkImages.Any(i => i.IsPrimary) ? ea.Artwork.ArtworkImages.FirstOrDefault(i => i.IsPrimary).FilePath : null,
+                        DisplayFrom = ea.DisplayFrom,
+                        DisplayTo = ea.DisplayTo
+                    }).ToList()
                 })
                 .OrderByDescending(e => e.CreatedAt)
                 .Skip(skip)
@@ -368,8 +381,11 @@ namespace Synos.Api.Repositories
 
         public async Task<AdminExhibitionViewDto?> GetExhibitionDetailsForAdminAsync(long exhibitionId)
         {
+            var currentTime = TimeUtils.GetCurrentTime();
             return await _context.Exhibitions
                 .Include(e => e.ExhibitionArtworks)
+                    .ThenInclude(ea => ea.Artwork)
+                        .ThenInclude(a => a.ArtworkImages)
                 .Where(e => e.Id == exhibitionId)
                 .Select(e => new AdminExhibitionViewDto
                 {
@@ -379,12 +395,64 @@ namespace Synos.Api.Repositories
                     Location = e.Location ?? string.Empty,
                     StartDate = e.StartDate,
                     EndDate = e.EndDate,
+                    IsActive = e.DeletedAt == null && e.StartDate.HasValue && e.EndDate.HasValue && 
+                              e.StartDate <= currentTime && e.EndDate >= currentTime,
                     CreatedAt = e.CreatedAt,
                     DeletedAt = e.DeletedAt,
                     TotalArtworks = e.ExhibitionArtworks.Count,
-                    TotalVisitors = 0 // Placeholder
+                    TotalVisitors = 0, // Placeholder
+                    Artworks = e.ExhibitionArtworks.Select(ea => new ExhibitionArtworkDetailDto
+                    {
+                        ArtworkId = ea.ArtworkId,
+                        ArtworkTitle = ea.Artwork.Title,
+                        PrimaryImageUrl = ea.Artwork.ArtworkImages.Any(i => i.IsPrimary) ? ea.Artwork.ArtworkImages.FirstOrDefault(i => i.IsPrimary).FilePath : null,
+                        DisplayFrom = ea.DisplayFrom,
+                        DisplayTo = ea.DisplayTo
+                    }).ToList()
                 })
                 .FirstOrDefaultAsync();
+        }
+
+        public async Task UpdateExhibitionArtworksAsync(long exhibitionId, UpdateExhibitionArtworksDto dto)
+        {
+            var exhibition = await _context.Exhibitions.Include(e => e.ExhibitionArtworks).FirstOrDefaultAsync(e => e.Id == exhibitionId);
+            if (exhibition == null)
+            {
+                throw new KeyNotFoundException("Exhibition not found.");
+            }
+
+            var existingArtworks = exhibition.ExhibitionArtworks.ToDictionary(ea => ea.ArtworkId);
+            var artworksInDto = dto.Artworks.ToDictionary(a => a.ArtworkId);
+
+            // Remove artworks that are no longer in the list
+            var artworksToRemove = exhibition.ExhibitionArtworks.Where(ea => !artworksInDto.ContainsKey(ea.ArtworkId)).ToList();
+            foreach (var artworkToRemove in artworksToRemove)
+            {
+                _context.ExhibitionArtworks.Remove(artworkToRemove);
+            }
+
+            // Update existing and add new artworks
+            foreach (var artworkDto in dto.Artworks)
+            {
+                if (existingArtworks.TryGetValue(artworkDto.ArtworkId, out var existingExhibitionArtwork))
+                {
+                    // Update existing
+                    existingExhibitionArtwork.DisplayFrom = artworkDto.DisplayFrom;
+                    existingExhibitionArtwork.DisplayTo = artworkDto.DisplayTo;
+                }
+                else
+                {
+                    // Add new
+                    exhibition.ExhibitionArtworks.Add(new ExhibitionArtwork
+                    {
+                        ArtworkId = artworkDto.ArtworkId,
+                        DisplayFrom = artworkDto.DisplayFrom,
+                        DisplayTo = artworkDto.DisplayTo
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
         }
 
         // ===========================================

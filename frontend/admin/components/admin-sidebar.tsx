@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { LayoutDashboard, Users, Palette, ShoppingCart, CalendarDays, Settings, LogOut } from "lucide-react"
@@ -21,8 +22,10 @@ export function AdminSidebar() {
   return (
     <div className="flex h-screen w-64 flex-col border-r border-border bg-card">
       <div className="flex h-16 items-center border-b border-border px-6">
-        <Palette className="h-6 w-6 text-primary" />
-        <span className="ml-2 text-lg font-semibold text-foreground">Art Gallery Admin</span>
+        <Link href="/" className="flex items-center gap-2">
+          <Image src="/icon.png" alt="Synos Logo" width={32} height={32} />
+          <span className="text-lg font-semibold text-foreground">Synos Admin</span>
+        </Link>
       </div>
 
       <nav className="flex-1 space-y-1 p-4">

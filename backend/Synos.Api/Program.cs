@@ -12,7 +12,6 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -22,12 +21,10 @@ builder.Services.AddControllers()
 builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
 
-// Add Entity Framework
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"), 
         ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))));
 
-// Register repositories and services  
 builder.Services.AddScoped<IMemberRepository, MemberRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IArtworkRepository, ArtworkRepository>();
@@ -37,7 +34,6 @@ builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IAuctionRepository, AuctionRepository>();
 builder.Services.AddScoped<ICommissionRepository, CommissionRepository>();
 
-// Register services
 builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ISellerService, SellerService>();
@@ -46,12 +42,11 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IVnPayService, VnPayService>();
 builder.Services.AddScoped<IGuestService, GuestService>();
 
-// Register background services for auction and order processing
 builder.Services.AddHostedService<AuctionEndingService>();
 builder.Services.AddHostedService<OrderExpirationService>();
+builder.Services.AddHostedService<AuctionStartingService>();
 
 
-// Configure JWT Authentication
 var jwtSecretKey = builder.Configuration["JwtSettings:SecretKey"] ?? "SynosSecretKeyForJWT2025VietnamUTC+7DefaultKey123456789";
 var jwtIssuer = builder.Configuration["JwtSettings:Issuer"] ?? "SynosApi";
 var jwtAudience = builder.Configuration["JwtSettings:Audience"] ?? "SynosApp";

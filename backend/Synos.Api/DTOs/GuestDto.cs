@@ -103,4 +103,23 @@ namespace Synos.Api.DTOs
         public List<GuestArtworkDto> FeaturedArtworks { get; set; } = new List<GuestArtworkDto>();
         public List<GuestArtworkDto> RecentArtworks { get; set; } = new List<GuestArtworkDto>();
     }
+
+    public class GuestExhibitionViewDto
+    {
+        public long Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public string? Location { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public List<GuestArtworkInExhibitionDto> Artworks { get; set; } = new();
+    }
+
+    public class GuestArtworkInExhibitionDto
+    {
+        public long Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string? PrimaryImageUrl { get; set; }
+        public string SellerName { get; set; } = string.Empty;
+    }
 }

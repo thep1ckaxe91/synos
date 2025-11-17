@@ -240,6 +240,18 @@ namespace Synos.Api.Controllers
             return Ok(new { artworkId = artworkId, isFavorite = isFavorite });
         }
 
+        [HttpGet("exhibitions/view/{id}")]
+        [RequireAuth]
+        public async Task<ActionResult<GuestExhibitionViewDto>> GetExhibition(long id)
+        {
+            var exhibition = await _memberService.GetExhibitionAsync(id);
+            if (exhibition == null)
+            {
+                return NotFound();
+            }
+            return Ok(exhibition);
+        }
+
         [HttpGet("health")]
         [AllowAnonymous]
         public IActionResult HealthCheck()

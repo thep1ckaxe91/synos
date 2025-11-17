@@ -3,6 +3,7 @@ using Synos.Api.Data;
 using Synos.Api.DTOs;
 using Synos.Api.Models;
 using Synos.Api.Repositories;
+using Synos.Api.Utils;
 
 namespace Synos.Api.Services
 {
@@ -13,19 +14,33 @@ namespace Synos.Api.Services
         private readonly IExhibitionRepository _exhibitionRepository;
         private readonly ICategoryRepository _categoryRepository;
         private readonly IAuctionRepository _auctionRepository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public GuestService(
             ApplicationDbContext context,
             IArtworkRepository artworkRepository,
             IExhibitionRepository exhibitionRepository,
             ICategoryRepository categoryRepository,
-            IAuctionRepository auctionRepository)
+            IAuctionRepository auctionRepository,
+            IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _artworkRepository = artworkRepository;
             _exhibitionRepository = exhibitionRepository;
             _categoryRepository = categoryRepository;
             _auctionRepository = auctionRepository;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        private string GetBaseUrl()
+        {
+            var request = _httpContextAccessor.HttpContext?.Request;
+            if (request == null)
+                return "http://localhost:8080"; // Fallback for Docker environment
+
+            
+
+            return $"{request.Scheme}://{request.Host}";
         }
 
         public async Task<IEnumerable<GuestArtworkDto>> GetAllArtworksAsync(int skip = 0, int take = 50)
@@ -55,11 +70,7 @@ namespace Synos.Api.Services
 
             var detailDto = MapToGuestArtworkDetailDto(artwork);
 
-            // Get auction details if artwork is for auction
-            if (artwork.IsFor == ArtworkFor.Auction)
-            {
-                detailDto.AuctionDetails = await GetAuctionDetailsAsync(artworkId);
-            }
+            // Auction details are not available for guest users
 
             // Get related artworks (same category or same seller)
             detailDto.RelatedArtworks = (await GetRelatedArtworksAsync(artworkId, 5)).ToList();
@@ -270,6 +281,52 @@ namespace Synos.Api.Services
             return exhibition == null ? null : MapToGuestExhibitionDto(exhibition);
         }
 
+        public async Task<GuestExhibitionViewDto?> GetExhibitionAsync(long exhibitionId)
+        {
+            var exhibition = await _exhibitionRepository.GetExhibitionForGuestAsync(exhibitionId);
+            if (exhibition == null)
+            {
+                return null;
+            }
+
+            var currentTime = TimeUtils.GetCurrentTime();
+            var artworks = exhibition.ExhibitionArtworks
+                .Where(ea => 
+                    ea.Artwork.Status == ArtworkStatus.Available &&
+                    ea.Artwork.DeletedAt == null &&
+                    (!ea.DisplayFrom.HasValue || ea.DisplayFrom.Value <= currentTime) &&
+                    (!ea.DisplayTo.HasValue || ea.DisplayTo.Value >= currentTime)
+                )
+                .Select(ea => new GuestArtworkInExhibitionDto
+                {
+                    Id = ea.Artwork.Id,
+                    Title = ea.Artwork.Title,
+                    PrimaryImageUrl = ea.Artwork.ArtworkImages.FirstOrDefault(i => i.IsPrimary)?.FilePath,
+                    SellerName = ea.Artwork.Seller.FullName,
+                })
+                .ToList();
+            
+            // Process image URLs
+            foreach (var artwork in artworks)
+            {
+                if (!string.IsNullOrEmpty(artwork.PrimaryImageUrl))
+                {
+                    artwork.PrimaryImageUrl = $"{GetBaseUrl()}/uploads/{artwork.PrimaryImageUrl.Replace("\\", "/")}";
+                }
+            }
+
+            return new GuestExhibitionViewDto
+            {
+                Id = exhibition.Id,
+                Title = exhibition.Title,
+                Description = exhibition.Description,
+                Location = exhibition.Location,
+                StartDate = exhibition.StartDate,
+                EndDate = exhibition.EndDate,
+                Artworks = artworks
+            };
+        }
+
         public async Task<IEnumerable<GuestExhibitionDto>> GetActiveExhibitionsAsync()
         {
             var now = DateTime.UtcNow;
@@ -359,55 +416,6 @@ namespace Synos.Api.Services
                 TotalCategories = totalCategories,
                 FeaturedArtworks = featuredArtworks.ToList(),
                 RecentArtworks = recentArtworks.ToList()
-            };
-        }
-
-        public async Task<IEnumerable<GuestArtworkDto>> GetActiveAuctionsAsync(int skip = 0, int take = 50)
-        {
-            var auctionArtworks = await _context.Auctions
-                .Include(a => a.Artwork)
-                    .ThenInclude(aw => aw.Category)
-                .Include(a => a.Artwork)
-                    .ThenInclude(aw => aw.Seller)
-                .Include(a => a.Artwork)
-                    .ThenInclude(aw => aw.ArtworkImages)
-                .Where(a => a.Status == AuctionStatus.Running)
-                .OrderByDescending(a => a.CreatedAt)
-                .Skip(skip)
-                .Take(take)
-                .Select(a => a.Artwork)
-                .ToListAsync();
-
-            return auctionArtworks.Select(MapToGuestArtworkDto);
-        }
-
-        public async Task<GuestAuctionDto?> GetAuctionDetailsAsync(long artworkId)
-        {
-            var auction = await _context.Auctions
-                .FirstOrDefaultAsync(a => a.ArtworkId == artworkId);
-
-            if (auction == null) return null;
-
-            var now = DateTime.UtcNow;
-            var isActive = auction.Status == AuctionStatus.Running && 
-                          auction.StartTime <= now && 
-                          auction.EndTime > now;
-
-            // Since the bidding system uses JSON files, we'll provide basic auction info
-            // without current bid details for guest users
-            return new GuestAuctionDto
-            {
-                Id = auction.Id,
-                StartTime = auction.StartTime,
-                EndTime = auction.EndTime,
-                StartingPrice = auction.StartingPrice,
-                ReservePrice = auction.ReservePrice,
-                MinimumIncrement = auction.MinimumIncrement,
-                Status = auction.Status.ToString(),
-                CurrentHighestBid = null, // Not accessible for guest users
-                BidCount = 0, // Not accessible for guest users
-                IsActive = isActive,
-                TimeRemaining = isActive ? auction.EndTime - now : null
             };
         }
 

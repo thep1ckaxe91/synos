@@ -16,19 +16,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Search, Plus, Eye, Edit, Trash2, Calendar, MapPin, Loader2 } from 'lucide-react'
+import { Search, Plus, Eye, Edit, Trash2, Calendar, MapPin, Loader2, Palette, Users } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { apiService } from "@/lib/api-service"
-import { Exhibition } from "@/lib/types"
+import { Exhibition, Artwork, ExhibitionArtworkDetail } from "@/lib/types"
 import { toast } from "sonner"
+import { MultiSelect } from "@/components/ui/multi-select"
 
 export default function ExhibitionManagement() {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false)
   const [selectedExhibition, setSelectedExhibition] = useState<Exhibition | null>(null)
   
   const [exhibitions, setExhibitions] = useState<Exhibition[]>([])
+  const [artworks, setArtworks] = useState<Artwork[]>([])
+  const [selectedArtworks, setSelectedArtworks] = useState<ExhibitionArtworkDetail[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -41,7 +45,26 @@ export default function ExhibitionManagement() {
 
   useEffect(() => {
     loadExhibitions()
+    loadArtworks()
   }, [])
+
+  useEffect(() => {
+    if (selectedExhibition && showEditDialog) {
+      const startDate = selectedExhibition.startDate ? new Date(selectedExhibition.startDate).toISOString().split('T')[0] : '';
+      const endDate = selectedExhibition.endDate ? new Date(selectedExhibition.endDate).toISOString().split('T')[0] : '';
+      setFormData({
+        title: selectedExhibition.title,
+        description: selectedExhibition.description,
+        location: selectedExhibition.location,
+        startDate: startDate,
+        endDate: endDate,
+      });
+      setSelectedArtworks(selectedExhibition.artworks ?? []);
+    } else if (!showEditDialog) {
+      setFormData({ title: '', description: '', location: '', startDate: '', endDate: '' });
+      setSelectedArtworks([]);
+    }
+  }, [selectedExhibition, showEditDialog]);
 
   const loadExhibitions = async () => {
     try {
@@ -57,23 +80,38 @@ export default function ExhibitionManagement() {
         exhibitionsData = response.data
       }
       
-      const mappedExhibitions: Exhibition[] = exhibitionsData.map((item: any) => ({
-        id: item.id,
-        title: item.title,
-        description: item.description,
-        startDate: item.startDate,
-        endDate: item.endDate,
-        location: item.location,
-        coverImage: item.coverImage,
-        isActive: item.isActive,
-        createdAt: item.createdAt,
-        deletedAt: item.deletedAt,
-        totalArtworks: item.totalArtworks || 0,
-        totalVisitors: item.totalVisitors || 0,
-        artworks: item.totalArtworks || 0,
-        visitors: item.totalVisitors || 0,
-        status: item.isActive ? 'Active' : 'Inactive'
-      }))
+      const mappedExhibitions: Exhibition[] = exhibitionsData.map((item: any) => {
+        let status;
+        if (item.isActive) {
+            status = 'Active';
+        } else {
+            const now = new Date();
+            const startDate = new Date(item.startDate);
+            if (startDate > now) {
+                status = 'Upcoming';
+            } else {
+                status = 'Past';
+            }
+        }
+
+        return {
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          startDate: item.startDate,
+          endDate: item.endDate,
+          location: item.location,
+          coverImage: item.coverImage,
+          createdAt: item.createdAt,
+          deletedAt: item.deletedAt,
+          totalArtworks: item.artworks?.length || 0,
+          totalVisitors: item.totalVisitors || 0,
+          artworks: item.artworks || [],
+          visitors: item.totalVisitors || 0,
+          status: status,
+          isActive: item.isActive,
+        }
+      })
       
       setExhibitions(mappedExhibitions)
     } catch (error) {
@@ -83,6 +121,16 @@ export default function ExhibitionManagement() {
       setLoading(false)
     }
   }
+
+  const loadArtworks = async () => {
+    try {
+      const response = await apiService.getAllArtworks();
+      setArtworks(response);
+    } catch (error) {
+      console.error("Failed to load artworks:", error);
+      toast.error("Failed to load artworks");
+    }
+  };
 
   const handleCreate = async () => {
     try {
@@ -106,6 +154,7 @@ export default function ExhibitionManagement() {
     try {
       setActionLoading(true)
       await apiService.updateExhibition(selectedExhibition.id, formData)
+      await apiService.updateExhibitionArtworks(selectedExhibition.id, selectedArtworks)
       toast.success('Exhibition updated successfully')
       setShowEditDialog(false)
       await loadExhibitions()
@@ -122,7 +171,7 @@ export default function ExhibitionManagement() {
     
     try {
       setActionLoading(true)
-      await apiService.deleteExhibition(selectedExhibition.id)
+      await apiService.deleteExhibition(selectedExhibition.id, "reason")
       toast.success('Exhibition deleted successfully')
       setShowDeleteDialog(false)
       await loadExhibitions()
@@ -151,6 +200,11 @@ export default function ExhibitionManagement() {
       </div>
     )
   }
+
+  const artworkOptions = artworks.map(artwork => ({
+    value: artwork.id.toString(),
+    label: artwork.title,
+  }));
 
   return (
     <div className="space-y-6">
@@ -232,16 +286,16 @@ export default function ExhibitionManagement() {
                       <TableCell className="font-medium text-foreground">{exhibition.title}</TableCell>
                       <TableCell className="text-muted-foreground">{exhibition.location}</TableCell>
                       <TableCell className="text-muted-foreground">
-                        {exhibition.startDate} - {exhibition.endDate}
+                        {new Date(exhibition.startDate).toLocaleDateString()} - {new Date(exhibition.endDate).toLocaleDateString()}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{exhibition.artworks}</TableCell>
+                      <TableCell className="text-muted-foreground">{exhibition.totalArtworks}</TableCell>
                       <TableCell className="text-muted-foreground">{exhibition.visitors}</TableCell>
                       <TableCell>
                         <Badge className="bg-accent text-accent-foreground">{exhibition.status}</Badge>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" onClick={() => { setSelectedExhibition(exhibition); setShowDetailsDialog(true); }}>
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button
@@ -299,15 +353,15 @@ export default function ExhibitionManagement() {
                     <TableRow key={exhibition.id}>
                       <TableCell className="font-medium text-foreground">{exhibition.title}</TableCell>
                       <TableCell className="text-muted-foreground">{exhibition.location}</TableCell>
-                      <TableCell className="text-muted-foreground">{exhibition.startDate}</TableCell>
-                      <TableCell className="text-muted-foreground">{exhibition.endDate}</TableCell>
-                      <TableCell className="text-muted-foreground">{exhibition.artworks}</TableCell>
+                      <TableCell className="text-muted-foreground">{new Date(exhibition.startDate).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-muted-foreground">{new Date(exhibition.endDate).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-muted-foreground">{exhibition.totalArtworks}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{exhibition.status}</Badge>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" onClick={() => { setSelectedExhibition(exhibition); setShowDetailsDialog(true); }}>
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button
@@ -371,15 +425,15 @@ export default function ExhibitionManagement() {
                       <TableCell className="font-medium text-foreground">{exhibition.title}</TableCell>
                       <TableCell className="text-muted-foreground">{exhibition.location}</TableCell>
                       <TableCell className="text-muted-foreground">
-                        {exhibition.startDate} - {exhibition.endDate}
+                        {new Date(exhibition.startDate).toLocaleDateString()} - {new Date(exhibition.endDate).toLocaleDateString()}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{exhibition.artworks}</TableCell>
+                      <TableCell className="text-muted-foreground">{exhibition.totalArtworks}</TableCell>
                       <TableCell className="text-muted-foreground">{exhibition.visitors}</TableCell>
                       <TableCell>
                         <Badge variant="secondary">{exhibition.status}</Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" onClick={() => { setSelectedExhibition(exhibition); setShowDetailsDialog(true); }}>
                           <Eye className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -520,6 +574,52 @@ export default function ExhibitionManagement() {
                 />
               </div>
             </div>
+            <div className="space-y-2">
+              <Label>Artworks</Label>
+              <MultiSelect
+                options={artworkOptions}
+                selected={selectedArtworks.map(a => a.artworkId.toString())}
+                onChange={(values) => {
+                  const newSelectedArtworks = values.map(v => {
+                    const existing = selectedArtworks.find(a => a.artworkId.toString() === v);
+                    if (existing) return existing;
+                    const artwork = artworks.find(a => a.id.toString() === v);
+                    return {
+                      artworkId: parseInt(v),
+                      artworkTitle: artwork?.title || '',
+                      primaryImageUrl: artwork?.primaryImageUrl,
+                      displayFrom: null,
+                      displayTo: null,
+                    }
+                  });
+                  setSelectedArtworks(newSelectedArtworks);
+                }}
+                placeholder="Select artworks..."
+              />
+            </div>
+            {selectedArtworks.map((artwork, index) => (
+              <div key={artwork.artworkId} className="grid grid-cols-3 gap-4 items-center">
+                <p>{artwork.artworkTitle}</p>
+                <Input
+                  type="datetime-local"
+                  value={artwork.displayFrom ? new Date(artwork.displayFrom).toISOString().slice(0, 16) : ''}
+                  onChange={(e) => {
+                    const newArtworks = [...selectedArtworks];
+                    newArtworks[index].displayFrom = e.target.value ? new Date(e.target.value) : null;
+                    setSelectedArtworks(newArtworks);
+                  }}
+                />
+                <Input
+                  type="datetime-local"
+                  value={artwork.displayTo ? new Date(artwork.displayTo).toISOString().slice(0, 16) : ''}
+                  onChange={(e) => {
+                    const newArtworks = [...selectedArtworks];
+                    newArtworks[index].displayTo = e.target.value ? new Date(e.target.value) : null;
+                    setSelectedArtworks(newArtworks);
+                  }}
+                />
+              </div>
+            ))}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditDialog(false)} disabled={actionLoading}>
@@ -565,6 +665,38 @@ export default function ExhibitionManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Details Dialog */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="max-w-2xl">
+        <DialogHeader>
+            <DialogTitle>{selectedExhibition?.title}</DialogTitle>
+            <DialogDescription>
+            {selectedExhibition?.location}
+            </DialogDescription>
+        </DialogHeader>
+        {selectedExhibition && (
+            <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">{selectedExhibition.description}</p>
+                <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-4 w-4" />
+                    <span>{new Date(selectedExhibition.startDate).toLocaleDateString()} - {new Date(selectedExhibition.endDate).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                    <Palette className="h-4 w-4" />
+                    <span>{selectedExhibition.totalArtworks} artworks</span>
+                </div>
+                 <div className="flex items-center gap-2 text-sm">
+                    <Users className="h-4 w-4" />
+                    <span>{selectedExhibition.totalVisitors} visitors</span>
+                </div>
+            </div>
+        )}
+        <DialogFooter>
+            <Button onClick={() => setShowDetailsDialog(false)}>Close</Button>
+        </DialogFooter>
+        </DialogContent>
+    </Dialog>
     </div>
   )
 }

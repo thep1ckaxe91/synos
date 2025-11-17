@@ -26,12 +26,9 @@ namespace Synos.Api.Services
         Task<IEnumerable<GuestExhibitionDto>> GetUpcomingExhibitionsAsync();
         Task<IEnumerable<GuestExhibitionDto>> GetPastExhibitionsAsync();
         Task<IEnumerable<GuestArtworkDto>> GetExhibitionArtworksAsync(long exhibitionId);
+        Task<GuestExhibitionViewDto?> GetExhibitionAsync(long exhibitionId);
 
         // Statistics and overview
         Task<GuestStatisticsDto> GetStatisticsAsync();
-
-        // Auction-specific methods for guest viewing
-        Task<IEnumerable<GuestArtworkDto>> GetActiveAuctionsAsync(int skip = 0, int take = 50);
-        Task<GuestAuctionDto?> GetAuctionDetailsAsync(long artworkId);
     }
 }

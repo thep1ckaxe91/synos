@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { ShoppingCart, Heart, User, Menu, Search, Briefcase } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/auth-context"
@@ -27,6 +28,7 @@ export function Header() {
       <div className="container flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center space-x-2">
+            <Image src="/icon.png" alt="Synos Logo" width={32} height={32} />
             <span className="font-serif text-2xl font-bold tracking-tight">SYNOS</span>
           </Link>
 
@@ -34,9 +36,11 @@ export function Header() {
             <Link href="/artworks" className="text-sm font-medium transition-colors hover:text-accent">
               Artworks
             </Link>
-            <Link href="/auctions" className="text-sm font-medium transition-colors hover:text-accent">
-              Auctions
-            </Link>
+            {isAuthenticated && !isSeller && (
+              <Link href="/auctions" className="text-sm font-medium transition-colors hover:text-accent">
+                Auctions
+              </Link>
+            )}
             <Link href="/exhibitions" className="text-sm font-medium transition-colors hover:text-accent">
               Exhibitions
             </Link>
@@ -155,9 +159,11 @@ export function Header() {
                 <Link href="/artworks" className="text-lg font-medium">
                   Artworks
                 </Link>
-                <Link href="/auctions" className="text-lg font-medium">
-                  Auctions
-                </Link>
+                {isAuthenticated && !isSeller && (
+                  <Link href="/auctions" className="text-lg font-medium">
+                    Auctions
+                  </Link>
+                )}
                 <Link href="/exhibitions" className="text-lg font-medium">
                   Exhibitions
                 </Link>

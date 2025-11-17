@@ -94,6 +94,23 @@ export interface GuestStatisticsDto {
   recentArtworks: GuestArtworkDto[]
 }
 
+export interface GuestExhibitionViewDto {
+  id: number
+  title: string
+  description?: string
+  location?: string
+  startDate?: string
+  endDate?: string
+  artworks: GuestArtworkInExhibitionDto[]
+}
+
+export interface GuestArtworkInExhibitionDto {
+  id: number
+  title: string
+  primaryImageUrl?: string
+  sellerName: string
+}
+
 // === MEMBER DTOs ===
 export interface MemberDto {
   id: number
@@ -284,6 +301,7 @@ export interface CreateAuctionDto {
   startTime: string
   endTime: string
   reservePrice?: number
+  minimumIncrement: number
 }
 
 export interface AuctionResponseDto {

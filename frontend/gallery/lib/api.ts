@@ -31,6 +31,8 @@ import type {
   SalesHistoryDto,
   CreateAuctionDto,
   AuctionResponseDto,
+  GuestExhibitionViewDto,
+  GuestAuctionDto, // Added this import
 } from "./types"
 
 export class ApiClient {
@@ -147,23 +149,19 @@ export class ApiClient {
   }
 
   async getExhibitions(skip = 0, take = 50): Promise<GuestExhibitionDto[]> {
-    return this.request<GuestExhibitionDto[]>(`/guest/exhibitions?skip=${skip}&take=${take}`, { method: "GET" })
+    return this.request<GuestExhibitionDto[]>("/guest/exhibitions", { method: "GET" })
   }
 
-  async getExhibitionDetails(exhibitionId: number): Promise<GuestExhibitionDto> {
+  async getExhibition(exhibitionId: number): Promise<GuestExhibitionDto> {
     return this.request<GuestExhibitionDto>(`/guest/exhibitions/${exhibitionId}`, { method: "GET" })
+  }
+
+  async getExhibitionDetails(exhibitionId: string): Promise<GuestExhibitionViewDto> {
+    return this.request<GuestExhibitionViewDto>(`/guest/exhibitions/view/${exhibitionId}`, { method: "GET" })
   }
 
   async getActiveExhibitions(): Promise<GuestExhibitionDto[]> {
     return this.request<GuestExhibitionDto[]>("/guest/exhibitions/active", { method: "GET" })
-  }
-
-  async getActiveAuctions(skip = 0, take = 50): Promise<GuestArtworkDto[]> {
-    return this.request<GuestArtworkDto[]>(`/guest/auctions?skip=${skip}&take=${take}`, { method: "GET" })
-  }
-
-  async getAuctionByArtworkId(artworkId: number): Promise<AuctionDetailDto> {
-    return this.request<AuctionDetailDto>(`/guest/auctions/${artworkId}`, { method: "GET" })
   }
 
   // Member endpoints (authenticated)
@@ -207,8 +205,8 @@ export class ApiClient {
     })
   }
 
-  async getBuyerAuctions(): Promise<AuctionDetailDto[]> {
-    return this.request<AuctionDetailDto[]>("/buyer/auctions", { method: "GET" })
+  async getBuyerAuctions(skip = 0, take = 100): Promise<AuctionDetailDto[]> {
+    return this.request<AuctionDetailDto[]>(`/buyer/auctions?skip=${skip}&take=${take}`, { method: "GET" })
   }
 
   async getBuyerAuctionDetails(auctionId: number): Promise<AuctionDetailDto> {
@@ -227,6 +225,10 @@ export class ApiClient {
       method: "POST",
       body: JSON.stringify(data),
     })
+  }
+
+  async getUpcomingAuctions(): Promise<AuctionDetailDto[]> {
+    return this.request<AuctionDetailDto[]>("/buyer/auctions/upcoming", { method: "GET" })
   }
 
   // Seller endpoints
@@ -331,3 +333,7 @@ export class ApiClient {
 }
 
 export const apiClient = new ApiClient()
+
+export const getExhibitionDetails = async (exhibitionId: string): Promise<GuestExhibitionViewDto> => {
+  return apiClient.getExhibitionDetails(exhibitionId)
+}

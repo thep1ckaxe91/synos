@@ -8,14 +8,14 @@ The Synos Art Gallery frontend has been successfully connected to the backend AP
 ### Environment Variables
 The frontend uses the following environment variables (configured in `.env.local`):
 
-```env
+\`\`\`env
 # API Configuration
 NEXT_PUBLIC_API_URL=http://localhost:8080/api
 
 # Frontend URLs
 NEXT_PUBLIC_FRONTEND_URL=http://localhost:3001
 NEXT_PUBLIC_ADMIN_URL=http://localhost:3000
-```
+\`\`\`
 
 ### API Base URLs
 - **Backend API**: `http://localhost:8080/api` (when using Docker)
@@ -64,17 +64,17 @@ NEXT_PUBLIC_ADMIN_URL=http://localhost:3000
 The frontend includes utilities for proper image URL handling:
 
 ### Image URL Helper
-```typescript
+\`\`\`typescript
 import { getImageUrl } from '@/lib/utils'
 
 // Usage
 const imageUrl = getImageUrl(artwork.images[0]?.imageUrl)
-```
+\`\`\`
 
 ### Next.js Image Configuration
 The `next.config.mjs` has been updated to handle images from the backend:
 
-```javascript
+\`\`\`javascript
 images: {
   unoptimized: true,
   remotePatterns: [
@@ -86,7 +86,7 @@ images: {
     },
   ],
 }
-```
+\`\`\`
 
 ## Testing the Connection
 
@@ -124,19 +124,19 @@ The API client includes comprehensive error handling:
 
 ### Starting the Application
 1. **Backend**: Use Docker Compose or run directly
-   ```bash
+   \`\`\`bash
    cd backend
    docker-compose up
-   ```
+   \`\`\`
 
 2. **Frontend**: 
-   ```bash
+   \`\`\`bash
    cd frontend/gallery
    npm run dev
-   ```
+   \`\`\`
 
 ### Making API Calls
-```typescript
+\`\`\`typescript
 import { apiClient } from '@/lib/api'
 
 // Guest endpoints (no auth)
@@ -146,7 +146,7 @@ const categories = await apiClient.getCategories()
 // Authenticated endpoints
 const user = await apiClient.getCurrentUser()
 const favorites = await apiClient.getFavorites()
-```
+\`\`\`
 
 ## Important Notes
 

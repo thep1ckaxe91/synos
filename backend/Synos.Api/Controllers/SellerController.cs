@@ -164,7 +164,20 @@ namespace Synos.Api.Controllers
             {
                 return BadRequest(new { message = "Failed to create auction due to an unexpected error." });
             }
-            return CreatedAtAction(nameof(GetArtworks), new { }, auction);
+            return CreatedAtAction(nameof(GetAuctions), new { }, auction);
+        }
+
+        [HttpGet("auctions")]
+        public async Task<ActionResult<IEnumerable<AuctionResponseDto>>> GetAuctions()
+        {
+            var sellerId = GetCurrentSellerId();
+            if (sellerId == null)
+            {
+                return Unauthorized(new { message = "Invalid token or not a seller." });
+            }
+
+            var auctions = await _sellerService.GetAuctionsBySellerAsync(sellerId.Value);
+            return Ok(auctions);
         }
 
         private async Task<object?> ValidateArtworkForAuction(long sellerId, long artworkId)
@@ -190,8 +203,16 @@ namespace Synos.Api.Controllers
                 return new { message = $"Artwork is not available for auction. Current status: {artwork.Status}" };
             }
 
-            // Check for existing active auctions (this would need to be implemented in service)
-            // For now, we'll let the service handle this validation
+            // Check for existing active or scheduled auctions for this artwork
+            var existingAuctions = await _sellerService.GetAuctionsBySellerAsync(sellerId);
+            var hasActiveAuction = existingAuctions.Any(a => 
+                a.ArtworkId == artworkId && 
+                (a.Status == "Running" || a.Status == "Scheduled"));
+            
+            if (hasActiveAuction)
+            {
+                return new { message = "This artwork already has an active or scheduled auction. Please wait for it to end before creating a new one." };
+            }
             
             return null; // No validation errors
         }

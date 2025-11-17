@@ -14,11 +14,13 @@ namespace Synos.Api.Repositories
         // Auction Status
         Task<IEnumerable<Auction>> GetActiveAuctionsAsync();
         Task<IEnumerable<Auction>> GetUpcomingAuctionsAsync();
+        Task<IEnumerable<Auction>> GetScheduledAuctionsAsync();
         Task<IEnumerable<Auction>> GetCompletedAuctionsAsync();
 
         // Auction Management
         Task<Auction?> GetAuctionByArtworkIdAsync(long artworkId);
         Task<IEnumerable<Auction>> GetAuctionsBySellerIdAsync(long sellerId);
+        Task<IEnumerable<Auction>> GetAuctionsByArtworkIdsAsync(IEnumerable<long> artworkIds);
 
         // Statistics
         Task<int> GetTotalAuctionsCountAsync();
