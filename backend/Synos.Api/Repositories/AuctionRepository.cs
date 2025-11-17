@@ -68,6 +68,16 @@ namespace Synos.Api.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Auction>> GetScheduledAuctionsAsync()
+        {
+            return await _context.Auctions
+                .Include(a => a.Artwork)
+                    .ThenInclude(aw => aw.ArtworkImages)
+                .Include(a => a.Artwork.Seller)
+                .Where(a => a.DeletedAt == null && a.Status == AuctionStatus.Scheduled)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<Auction>> GetEndedAuctionsAsync()
         {
             var currentTime = TimeUtils.GetCurrentTime();

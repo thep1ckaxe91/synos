@@ -19,4 +19,8 @@ public class CreateAuctionDto
 
     [Range(1, (double)decimal.MaxValue)]
     public decimal? ReservePrice { get; set; }
+
+    [Required]
+    [Range(1, (double)decimal.MaxValue)]
+    public decimal MinimumIncrement { get; set; }
 }

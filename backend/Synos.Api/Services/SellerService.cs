@@ -337,6 +337,7 @@ namespace Synos.Api.Services
                 EndTime = createAuctionDto.EndTime,
                 StartingPrice = createAuctionDto.StartingPrice,
                 ReservePrice = createAuctionDto.ReservePrice,
+                MinimumIncrement = createAuctionDto.MinimumIncrement,
                 Status = AuctionStatus.Scheduled // Initially scheduled
             };
 

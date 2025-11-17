@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useParams, useRouter } from 'next/navigation'
 import Image from "next/image"
 import { Clock, Gavel, ArrowLeft, Users } from 'lucide-react'
@@ -15,7 +15,6 @@ import { useAuth } from "@/contexts/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import { Separator } from "@/components/ui/separator"
 import { getImageUrl } from "@/lib/utils"
-import { min } from "date-fns"
 
 export default function AuctionDetailPage() {
   const params = useParams()
@@ -26,22 +25,29 @@ export default function AuctionDetailPage() {
   const [bidAmount, setBidAmount] = useState("")
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [timeRemainingDisplay, setTimeRemainingDisplay] = useState("")
 
-  useEffect(() => {
-    if (!authLoading) {
-      if (!isAuthenticated) {
-        router.push("/login")
-        return
-      }
-      loadAuction()
-      const interval = setInterval(loadAuction, 10000) // Refresh every 10 seconds
-      return () => clearInterval(interval)
-    }
-  }, [params.id, isAuthenticated, authLoading])
+  const auctionId = Number.parseInt(params.id as string)
 
-  const loadAuction = async () => {
+  const calculateTimeRemaining = useCallback((endTime: string) => {
+    const end = new Date(endTime).getTime()
+    const now = new Date().getTime()
+    const diff = end - now
+
+    if (diff <= 0) return "Auction ended"
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+
+    if (days > 0) return `${days}d ${hours}h ${minutes}m`
+    if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`
+    return `${minutes}m ${seconds}s`
+  }, [])
+
+  const loadAuction = useCallback(async () => {
     try {
-      const auctionId = Number.parseInt(params.id as string)
       const auctionData = await apiClient.getBuyerAuctionDetails(auctionId)
       setAuction(auctionData)
 
@@ -50,6 +56,7 @@ export default function AuctionDetailPage() {
         ? auctionData.currentHighestBid + (auctionData.minimumIncrement)
         : auctionData.startingPrice + (auctionData.minimumIncrement)
       setBidAmount(minBid.toString())
+      setTimeRemainingDisplay(calculateTimeRemaining(auctionData.endTime))
     } catch (error) {
       console.error("Failed to load auction:", error)
       toast({
@@ -60,7 +67,31 @@ export default function AuctionDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [auctionId, calculateTimeRemaining, toast])
+
+  // Effect for initial load and polling for bid updates
+  useEffect(() => {
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        router.push("/login")
+        return
+      }
+      loadAuction() // Initial load
+
+      const pollingInterval = setInterval(loadAuction, 5000); // Poll every 5 seconds for bid updates
+      return () => clearInterval(pollingInterval);
+    }
+  }, [isAuthenticated, authLoading, router, loadAuction]);
+
+  // Effect for real-time clock countdown
+  useEffect(() => {
+    if (auction?.endTime) {
+      const clockInterval = setInterval(() => {
+        setTimeRemainingDisplay(calculateTimeRemaining(auction.endTime));
+      }, 1000);
+      return () => clearInterval(clockInterval);
+    }
+  }, [auction?.endTime, calculateTimeRemaining]);
 
   const handlePlaceBid = async () => {
     if (!isAuthenticated) {
@@ -88,7 +119,7 @@ export default function AuctionDetailPage() {
         title: "Bid placed successfully",
         description: `Your bid of $${amount.toLocaleString()} has been placed.`,
       })
-      await loadAuction()
+      await loadAuction() // Refresh auction data immediately after placing a bid
     } catch (error) {
       toast({
         title: "Failed to place bid",
@@ -98,26 +129,6 @@ export default function AuctionDetailPage() {
     } finally {
       setSubmitting(false)
     }
-  }
-
-  const getTimeRemaining = () => {
-    if (!auction) return ""
-
-    // Parse the backend time directly (assuming it's already in the correct timezone)
-    const endTime = new Date(auction.endTime)
-    const now = new Date()
-    const diff = endTime.getTime() - now.getTime()
-
-    if (diff <= 0) return "Auction ended"
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000)
-
-    if (days > 0) return `${days}d ${hours}h ${minutes}m`
-    if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`
-    return `${minutes}m ${seconds}s`
   }
 
   // Redirect to login if not authenticated
@@ -215,7 +226,7 @@ export default function AuctionDetailPage() {
                       <Clock className="h-5 w-5 text-accent" />
                       <span className="font-medium">Time Remaining</span>
                     </div>
-                    <span className="text-xl font-bold text-accent">{getTimeRemaining()}</span>
+                    <span className="text-xl font-bold text-accent">{timeRemainingDisplay}</span>
                   </div>
 
                   {auction.totalBids > 0 && (

@@ -49,6 +49,7 @@ builder.Services.AddScoped<IGuestService, GuestService>();
 // Register background services for auction and order processing
 builder.Services.AddHostedService<AuctionEndingService>();
 builder.Services.AddHostedService<OrderExpirationService>();
+builder.Services.AddHostedService<AuctionStartingService>();
 
 
 // Configure JWT Authentication

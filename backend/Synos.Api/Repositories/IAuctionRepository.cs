@@ -14,6 +14,7 @@ namespace Synos.Api.Repositories
         // Auction Status
         Task<IEnumerable<Auction>> GetActiveAuctionsAsync();
         Task<IEnumerable<Auction>> GetUpcomingAuctionsAsync();
+        Task<IEnumerable<Auction>> GetScheduledAuctionsAsync();
         Task<IEnumerable<Auction>> GetCompletedAuctionsAsync();
 
         // Auction Management
