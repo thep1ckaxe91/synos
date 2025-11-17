@@ -102,6 +102,13 @@ namespace Synos.Api.Controllers
             return Ok(auctions);
         }
 
+        [HttpGet("auctions/upcoming")]
+        public async Task<ActionResult<IEnumerable<AuctionDetailDto>>> GetUpcomingAuctions()
+        {
+            var auctions = await _buyerService.GetUpcomingAuctionsAsync();
+            return Ok(auctions);
+        }
+
         [HttpGet("auctions/{id}")]
         public async Task<ActionResult<AuctionDetailDto>> GetAuctionDetails(long id)
         {

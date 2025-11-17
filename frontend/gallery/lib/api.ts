@@ -32,6 +32,7 @@ import type {
   CreateAuctionDto,
   AuctionResponseDto,
   GuestExhibitionViewDto,
+  GuestAuctionDto, // Added this import
 } from "./types"
 
 export class ApiClient {
@@ -148,7 +149,7 @@ export class ApiClient {
   }
 
   async getExhibitions(skip = 0, take = 50): Promise<GuestExhibitionDto[]> {
-    return this.request<GuestExhibitionDto[]>(`/guest/exhibitions?skip=${skip}&take=${take}`, { method: "GET" })
+    return this.request<GuestExhibitionDto[]>("/guest/exhibitions", { method: "GET" })
   }
 
   async getExhibition(exhibitionId: number): Promise<GuestExhibitionDto> {
@@ -224,6 +225,10 @@ export class ApiClient {
       method: "POST",
       body: JSON.stringify(data),
     })
+  }
+
+  async getUpcomingAuctions(): Promise<AuctionDetailDto[]> {
+    return this.request<AuctionDetailDto[]>("/buyer/auctions/upcoming", { method: "GET" })
   }
 
   // Seller endpoints

@@ -287,6 +287,52 @@ namespace Synos.Api.Services
                  });
         }
 
+        public async Task<IEnumerable<AuctionDetailDto>> GetUpcomingAuctionsAsync()
+        {
+            var upcomingAuctions = await _auctionRepository.GetScheduledAuctionsAsync();
+
+            return upcomingAuctions.Select(auction => new AuctionDetailDto
+            {
+                Id = auction.Id,
+                ArtworkId = auction.ArtworkId,
+                StartTime = auction.StartTime,
+                EndTime = auction.EndTime,
+                StartingPrice = auction.StartingPrice,
+                ReservePrice = auction.ReservePrice,
+                MinimumIncrement = auction.MinimumIncrement,
+                Status = auction.Status.ToString(),
+                CreatedAt = auction.CreatedAt,
+                Artwork = auction.Artwork == null ? null : new AuctionArtworkDto
+                {
+                    Id = auction.Artwork.Id,
+                    Title = auction.Artwork.Title,
+                    Description = auction.Artwork.Description ?? string.Empty,
+                    CreationYear = auction.Artwork.CreationYear ?? 0,
+                    Dimensions = auction.Artwork.Dimensions ?? string.Empty,
+                    Condition = auction.Artwork.Condition.ToString(),
+                    Currency = auction.Artwork.Currency,
+                    Status = auction.Artwork.Status.ToString(),
+                    CategoryName = auction.Artwork.Category?.Name ?? "Uncategorized",
+                    Seller = new AuctionSellerDto
+                    {
+                        Id = auction.Artwork.Seller.Id,
+                        FullName = auction.Artwork.Seller.FullName,
+                        Bio = auction.Artwork.Seller.Bio,
+                        ProfileImage = auction.Artwork.Seller.ProfileImage
+                    },
+                    ArtworkImages = auction.Artwork.ArtworkImages.Where(img => img.DeletedAt == null).Select(img => new ArtworkImageDto
+                    {
+                        Id = img.Id,
+                        ImageUrl = img.FilePath,
+                        IsPrimary = img.IsPrimary,
+                        UploadedAt = img.UploadedAt
+                    }).ToList()
+                },
+                TotalBids = 0, // Upcoming auctions have no bids yet
+                CurrentHighestBid = null // Upcoming auctions have no bids yet
+            });
+        }
+
         public async Task<AuctionDetailDto?> GetAuctionDetailsAsync(long auctionId)
         {
             var auction = await _auctionRepository.GetAuctionByIdAsync(auctionId);
