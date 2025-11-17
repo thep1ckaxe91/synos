@@ -1,27 +1,39 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Clock, Gavel } from 'lucide-react'
+import { Clock, Gavel, Lock } from 'lucide-react'
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { apiClient } from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { useAuth } from "@/contexts/auth-context"
 import { getImageUrl, formatPrice } from "@/lib/utils"
 
 export default function AuctionsPage() {
+  const router = useRouter()
+  const { isAuthenticated, loading: authLoading } = useAuth()
   const [auctions, setAuctions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadAuctions()
-  }, [])
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        // Show login prompt instead of redirecting immediately
+        setLoading(false)
+        return
+      }
+      loadAuctions()
+    }
+  }, [isAuthenticated, authLoading])
 
   const loadAuctions = async () => {
     try {
-      const data = await apiClient.getActiveAuctions(0, 50)
+      const data = await apiClient.getBuyerAuctions(0, 50)
       setAuctions(data)
     } catch (error) {
       console.error("Failed to load auctions:", error)
@@ -62,7 +74,21 @@ export default function AuctionsPage() {
 
         <section className="py-12">
           <div className="container px-4">
-            {loading ? (
+            {!isAuthenticated ? (
+              <div className="text-center py-12">
+                <Lock className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                <h2 className="text-2xl font-semibold mb-2">Authentication Required</h2>
+                <p className="text-muted-foreground mb-6">
+                  You need to be logged in to view and participate in auctions.
+                </p>
+                <div className="space-x-4">
+                  <Button onClick={() => router.push("/login")}>Log In</Button>
+                  <Button variant="outline" onClick={() => router.push("/register")}>
+                    Sign Up
+                  </Button>
+                </div>
+              </div>
+            ) : loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (
                   <Card key={i} className="overflow-hidden">
@@ -82,7 +108,7 @@ export default function AuctionsPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {auctions.map((auction) => (
-                  <Link key={auction.id} href={`/auctions/${auction.artworkId || auction.id}`}>
+                  <Link key={auction.id} href={`/auctions/${auction.id}`}>
                     <Card className="overflow-hidden group hover:shadow-lg transition-shadow duration-300">
                       <div className="aspect-[3/4] relative overflow-hidden bg-muted">
                         <Image

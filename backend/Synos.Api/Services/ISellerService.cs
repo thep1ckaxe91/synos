@@ -10,5 +10,6 @@ namespace Synos.Api.Services
         Task<IEnumerable<SellerArtworkDto>> GetArtworksBySellerAsync(long sellerId);
         Task<IEnumerable<SalesHistoryDto>> GetSalesHistoryAsync(long sellerId);
         Task<AuctionResponseDto?> CreateAuctionAsync(long sellerId, CreateAuctionDto createAuctionDto);
+        Task<IEnumerable<AuctionResponseDto>> GetAuctionsBySellerAsync(long sellerId);
     }
 }

@@ -300,48 +300,7 @@ namespace Synos.Api.Controllers
             }
         }
 
-        /// <summary>
-        /// Get active auctions
-        /// </summary>
-        [HttpGet("auctions")]
-        [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<GuestArtworkDto>>> GetActiveAuctions(
-            [FromQuery] int skip = 0,
-            [FromQuery] int take = 50)
-        {
-            try
-            {
-                var auctions = await _guestService.GetActiveAuctionsAsync(skip, take);
-                return Ok(auctions);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving active auctions");
-                return StatusCode(500, new { message = "An error occurred while retrieving active auctions" });
-            }
-        }
-
-        /// <summary>
-        /// Get auction details for a specific artwork
-        /// </summary>
-        [HttpGet("auctions/{artworkId}")]
-        [AllowAnonymous]
-        public async Task<ActionResult<GuestAuctionDto>> GetAuctionDetails(long artworkId)
-        {
-            try
-            {
-                var auction = await _guestService.GetAuctionDetailsAsync(artworkId);
-                if (auction == null)
-                    return NotFound(new { message = "Auction not found for this artwork" });
-
-                return Ok(auction);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving auction details for artwork ID: {ArtworkId}", artworkId);
-                return StatusCode(500, new { message = "An error occurred while retrieving auction details" });
-            }
-        }
+        // Auction endpoints removed - guests cannot access auction information
 
         /// <summary>
         /// Get general statistics and overview data

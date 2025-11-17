@@ -15,11 +15,12 @@ import { useAuth } from "@/contexts/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import { Separator } from "@/components/ui/separator"
 import { getImageUrl } from "@/lib/utils"
+import { min } from "date-fns"
 
 export default function AuctionDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, loading: authLoading } = useAuth()
   const { toast } = useToast()
   const [auction, setAuction] = useState<any>(null)
   const [bidAmount, setBidAmount] = useState("")
@@ -27,21 +28,27 @@ export default function AuctionDetailPage() {
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    loadAuction()
-    const interval = setInterval(loadAuction, 10000) // Refresh every 10 seconds
-    return () => clearInterval(interval)
-  }, [params.id])
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        router.push("/login")
+        return
+      }
+      loadAuction()
+      const interval = setInterval(loadAuction, 10000) // Refresh every 10 seconds
+      return () => clearInterval(interval)
+    }
+  }, [params.id, isAuthenticated, authLoading])
 
   const loadAuction = async () => {
     try {
-      const artworkId = Number.parseInt(params.id as string)
-      const auctionData = await apiClient.getAuctionDetails(artworkId)
+      const auctionId = Number.parseInt(params.id as string)
+      const auctionData = await apiClient.getBuyerAuctionDetails(auctionId)
       setAuction(auctionData)
 
       // Set suggested bid amount
       const minBid = auctionData.currentHighestBid
-        ? auctionData.currentHighestBid + (auctionData.minimumIncrement || 50)
-        : auctionData.startingPrice
+        ? auctionData.currentHighestBid + (auctionData.minimumIncrement)
+        : auctionData.startingPrice + (auctionData.minimumIncrement)
       setBidAmount(minBid.toString())
     } catch (error) {
       console.error("Failed to load auction:", error)
@@ -63,9 +70,8 @@ export default function AuctionDetailPage() {
 
     const amount = Number.parseFloat(bidAmount)
     const minBid = auction.currentHighestBid
-      ? auction.currentHighestBid + (auction.minimumIncrement || 50)
-      : auction.startingPrice
-
+      ? auction.currentHighestBid + (auction.minimumIncrement)
+      : auction.startingPrice + (auction.minimumIncrement)
     if (amount < minBid) {
       toast({
         title: "Invalid bid",
@@ -97,9 +103,10 @@ export default function AuctionDetailPage() {
   const getTimeRemaining = () => {
     if (!auction) return ""
 
-    const end = new Date(auction.endTime).getTime()
-    const now = new Date().getTime()
-    const diff = end - now
+    // Parse the backend time directly (assuming it's already in the correct timezone)
+    const endTime = new Date(auction.endTime)
+    const now = new Date()
+    const diff = endTime.getTime() - now.getTime()
 
     if (diff <= 0) return "Auction ended"
 
@@ -113,7 +120,12 @@ export default function AuctionDetailPage() {
     return `${minutes}m ${seconds}s`
   }
 
-  if (loading) {
+  // Redirect to login if not authenticated
+  if (!isAuthenticated && !authLoading) {
+    return null // This will be handled by the useEffect redirect
+  }
+
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -146,8 +158,8 @@ export default function AuctionDetailPage() {
   const artwork = auction.artwork
   const isActive = auction.status === "Running"
   const minBid = auction.currentHighestBid
-    ? auction.currentHighestBid + (auction.minimumIncrement || 50)
-    : auction.startingPrice
+    ? auction.currentHighestBid + (auction.minimumIncrement)
+    : auction.startingPrice + (auction.minimumIncrement)
 
   return (
     <div className="min-h-screen flex flex-col">

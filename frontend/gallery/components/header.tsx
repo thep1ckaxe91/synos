@@ -36,9 +36,11 @@ export function Header() {
             <Link href="/artworks" className="text-sm font-medium transition-colors hover:text-accent">
               Artworks
             </Link>
-            <Link href="/auctions" className="text-sm font-medium transition-colors hover:text-accent">
-              Auctions
-            </Link>
+            {isAuthenticated && !isSeller && (
+              <Link href="/auctions" className="text-sm font-medium transition-colors hover:text-accent">
+                Auctions
+              </Link>
+            )}
             <Link href="/exhibitions" className="text-sm font-medium transition-colors hover:text-accent">
               Exhibitions
             </Link>
@@ -157,9 +159,11 @@ export function Header() {
                 <Link href="/artworks" className="text-lg font-medium">
                   Artworks
                 </Link>
-                <Link href="/auctions" className="text-lg font-medium">
-                  Auctions
-                </Link>
+                {isAuthenticated && !isSeller && (
+                  <Link href="/auctions" className="text-lg font-medium">
+                    Auctions
+                  </Link>
+                )}
                 <Link href="/exhibitions" className="text-lg font-medium">
                   Exhibitions
                 </Link>

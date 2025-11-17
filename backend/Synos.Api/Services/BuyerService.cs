@@ -2,6 +2,8 @@ using Synos.Api.DTOs;
 using Synos.Api.Models;
 using Synos.Api.Repositories;
 using Synos.Api.Utils;
+using Synos.Api.Data;
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
 namespace Synos.Api.Services
@@ -15,6 +17,7 @@ namespace Synos.Api.Services
         private readonly ILogger<BuyerService> _logger;
         private readonly IAuctionRepository _auctionRepository;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly ApplicationDbContext _context;
 
         public BuyerService(
             IOrderRepository orderRepository,
@@ -23,7 +26,8 @@ namespace Synos.Api.Services
             IVnPayService vnPayService,
             ILogger<BuyerService> logger,
             IAuctionRepository auctionRepository,
-            IWebHostEnvironment webHostEnvironment)
+            IWebHostEnvironment webHostEnvironment,
+            ApplicationDbContext context)
         {
             _orderRepository = orderRepository;
             _artworkRepository = artworkRepository;
@@ -32,6 +36,7 @@ namespace Synos.Api.Services
             _logger = logger;
             _auctionRepository = auctionRepository;
             _webHostEnvironment = webHostEnvironment;
+            _context = context;
         }
 
         public async Task<IEnumerable<OrderResponseDto>> GetPurchaseHistoryAsync(long buyerId)
@@ -228,9 +233,58 @@ namespace Synos.Api.Services
         }
 
         // Auction Methods
-        public async Task<IEnumerable<Auction>> GetActiveAuctionsAsync()
+       public async Task<IEnumerable<AuctionDetailDto>> GetActiveAuctionsAsync(int skip = 0, int take = 50)
         {
-            return await _auctionRepository.GetActiveAuctionsAsync();
+            var activeAuctions = await _context.Auctions
+                .Include(a => a.Artwork)
+                    .ThenInclude(aw => aw.Category)
+                .Include(a => a.Artwork)
+                    .ThenInclude(aw => aw.Seller)
+                .Include(a => a.Artwork)
+                    .ThenInclude(aw => aw.ArtworkImages)
+                .Where(a => a.Status == AuctionStatus.Running)
+                .OrderByDescending(a => a.CreatedAt)
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync();
+
+                 return activeAuctions.Select(auction => new AuctionDetailDto
+                 {
+                     Id = auction.Id,
+                     ArtworkId = auction.ArtworkId,
+                     StartTime = auction.StartTime,
+                     EndTime = auction.EndTime,
+                     StartingPrice = auction.StartingPrice,
+                     ReservePrice = auction.ReservePrice,
+                     MinimumIncrement = auction.MinimumIncrement,
+                     Status = auction.Status.ToString(),
+                     CreatedAt = auction.CreatedAt,
+                     Artwork = new AuctionArtworkDto
+                     {
+                         Id = auction.Artwork.Id,
+                         Title = auction.Artwork.Title,
+                         Description = auction.Artwork.Description ?? string.Empty,
+                         CreationYear = auction.Artwork.CreationYear ?? 0,
+                         Dimensions = auction.Artwork.Dimensions ?? string.Empty,
+                         Condition = auction.Artwork.Condition ?? string.Empty,
+                         Currency = "USD",
+                         Status = auction.Artwork.Status.ToString(),
+                         CategoryName = auction.Artwork.Category?.Name ?? string.Empty,
+                         ArtworkImages = auction.Artwork.ArtworkImages?.Select(img => new ArtworkImageDto
+                         {
+                             Id = img.Id,
+                             ImageUrl = img.FilePath,
+                             IsPrimary = img.IsPrimary
+                         }).ToList() ?? new List<ArtworkImageDto>(),
+                         Seller = new AuctionSellerDto
+                         {
+                             Id = auction.Artwork.Seller?.Id ?? 0,
+                             FullName = auction.Artwork.Seller?.FullName ?? string.Empty
+                         }
+                     },
+                     TotalBids = 0, // Bid count would need separate query
+                     CurrentHighestBid = null // Current bid would need separate query
+                 });
         }
 
         public async Task<AuctionDetailDto?> GetAuctionDetailsAsync(long auctionId)

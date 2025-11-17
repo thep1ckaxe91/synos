@@ -11,13 +11,14 @@ import { useAuth } from "@/contexts/auth-context"
 import { apiClient } from "@/lib/api"
 import { formatPrice } from "@/lib/utils"
 import { Package, DollarSign, ImageIcon, Gavel } from 'lucide-react'
-import type { SellerArtworkDto, SalesHistoryDto } from "@/lib/types"
+import type { SellerArtworkDto, SalesHistoryDto, AuctionResponseDto } from "@/lib/types"
 
 export default function SellerDashboardPage() {
   const router = useRouter()
   const { user, isAuthenticated, loading: authLoading } = useAuth()
   const [artworks, setArtworks] = useState<SellerArtworkDto[]>([])
   const [salesHistory, setSalesHistory] = useState<SalesHistoryDto[]>([])
+  const [auctions, setAuctions] = useState<AuctionResponseDto[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -34,12 +35,14 @@ export default function SellerDashboardPage() {
 
   const loadDashboardData = async () => {
     try {
-      const [artworksData, salesData] = await Promise.all([
+      const [artworksData, salesData, auctionsData] = await Promise.all([
         apiClient.getSellerArtworks(),
         apiClient.getSalesHistory(),
+        apiClient.getSellerAuctions(),
       ])
       setArtworks(artworksData)
       setSalesHistory(salesData)
+      setAuctions(auctionsData)
     } catch (error) {
       console.error("Failed to load dashboard data:", error)
     } finally {
@@ -134,15 +137,17 @@ export default function SellerDashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {artworks.filter((a) => a.saleType === "Auction").length}
+                    {auctions.filter((a) => a.status === "Running").length}
                   </div>
-                  <p className="text-xs text-muted-foreground">Active auctions</p>
+                  <p className="text-xs text-muted-foreground">
+                    {auctions.filter((a) => a.status === "Running").length} active, {auctions.length} total
+                  </p>
                 </CardContent>
               </Card>
             </div>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
               <Card>
                 <CardHeader>
                   <CardTitle>Upload Artwork</CardTitle>
@@ -167,6 +172,34 @@ export default function SellerDashboardPage() {
                   </p>
                   <Button asChild variant="outline" className="w-full">
                     <Link href="/seller/artworks">View My Artworks</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Create Auction</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Create auctions for your artworks to maximize selling potential.
+                  </p>
+                  <Button asChild variant="outline" className="w-full">
+                    <Link href="/seller/auctions/new">Create New Auction</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Manage Auctions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    View and manage all your active and past auctions.
+                  </p>
+                  <Button asChild variant="outline" className="w-full">
+                    <Link href="/seller/auctions">View My Auctions</Link>
                   </Button>
                 </CardContent>
               </Card>

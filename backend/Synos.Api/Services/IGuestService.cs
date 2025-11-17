@@ -30,9 +30,5 @@ namespace Synos.Api.Services
 
         // Statistics and overview
         Task<GuestStatisticsDto> GetStatisticsAsync();
-
-        // Auction-specific methods for guest viewing
-        Task<IEnumerable<GuestArtworkDto>> GetActiveAuctionsAsync(int skip = 0, int take = 50);
-        Task<GuestAuctionDto?> GetAuctionDetailsAsync(long artworkId);
     }
 }

@@ -163,14 +163,6 @@ export class ApiClient {
     return this.request<GuestExhibitionDto[]>("/guest/exhibitions/active", { method: "GET" })
   }
 
-  async getActiveAuctions(skip = 0, take = 50): Promise<GuestArtworkDto[]> {
-    return this.request<GuestArtworkDto[]>(`/guest/auctions?skip=${skip}&take=${take}`, { method: "GET" })
-  }
-
-  async getAuctionByArtworkId(artworkId: number): Promise<AuctionDetailDto> {
-    return this.request<AuctionDetailDto>(`/guest/auctions/${artworkId}`, { method: "GET" })
-  }
-
   // Member endpoints (authenticated)
   async getFavorites(): Promise<FavoriteDto[]> {
     return this.request<FavoriteDto[]>("/members/me/favorites", { method: "GET" })
@@ -212,8 +204,8 @@ export class ApiClient {
     })
   }
 
-  async getBuyerAuctions(): Promise<AuctionDetailDto[]> {
-    return this.request<AuctionDetailDto[]>("/buyer/auctions", { method: "GET" })
+  async getBuyerAuctions(skip = 0, take = 100): Promise<AuctionDetailDto[]> {
+    return this.request<AuctionDetailDto[]>(`/buyer/auctions?skip=${skip}&take=${take}`, { method: "GET" })
   }
 
   async getBuyerAuctionDetails(auctionId: number): Promise<AuctionDetailDto> {

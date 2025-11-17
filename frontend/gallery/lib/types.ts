@@ -301,6 +301,7 @@ export interface CreateAuctionDto {
   startTime: string
   endTime: string
   reservePrice?: number
+  minimumIncrement: number
 }
 
 export interface AuctionResponseDto {

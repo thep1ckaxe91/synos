@@ -13,7 +13,7 @@ namespace Synos.Api.Services
         Task<VnPayIpnResponseDto> ProcessVnPayIpnAsync(IQueryCollection collections);
 
         // Auction methods
-        Task<IEnumerable<Auction>> GetActiveAuctionsAsync();
+        Task<IEnumerable<AuctionDetailDto>> GetActiveAuctionsAsync(int skip = 0, int take = 50);
         Task<AuctionDetailDto?> GetAuctionDetailsAsync(long auctionId);
         Task<bool> PlaceBidAsync(long auctionId, long memberId, decimal amount);
     }

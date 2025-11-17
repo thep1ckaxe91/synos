@@ -366,6 +366,36 @@ namespace Synos.Api.Services
             };
         }
 
+        public async Task<IEnumerable<AuctionResponseDto>> GetAuctionsBySellerAsync(long sellerId)
+        {
+            // Get all artworks by this seller first
+            var sellerArtworks = await _artworkRepository.GetArtworksBySellerIdAsync(sellerId);
+            var artworkIds = sellerArtworks.Select(a => a.Id).ToList();
+
+            if (!artworkIds.Any())
+            {
+                return new List<AuctionResponseDto>();
+            }
+
+            // Get all auctions for the seller's artworks
+            var auctions = await _auctionRepository.GetAuctionsByArtworkIdsAsync(artworkIds);
+
+            return auctions.Select(auction => new AuctionResponseDto
+            {
+                Id = auction.Id,
+                ArtworkId = auction.ArtworkId,
+                ArtworkTitle = auction.Artwork?.Title ?? "Unknown",
+                StartTime = auction.StartTime,
+                EndTime = auction.EndTime,
+                StartingPrice = auction.StartingPrice,
+                ReservePrice = auction.ReservePrice,
+                MinimumIncrement = auction.MinimumIncrement,
+                Status = auction.Status.ToString(),
+                WinnerBidId = auction.WinnerBidId,
+                CreatedAt = auction.CreatedAt
+            }).OrderByDescending(a => a.CreatedAt);
+        }
+
         private async Task CreateBiddingFileAsync(Auction auction)
         {
             var auctionDataPath = Path.Combine(_webHostEnvironment.ContentRootPath, "AuctionData");

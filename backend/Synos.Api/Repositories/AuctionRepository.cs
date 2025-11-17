@@ -196,5 +196,15 @@ namespace Synos.Api.Repositories
                 .Take(count)
                 .ToListAsync();
         }
+
+        public async Task<IEnumerable<Auction>> GetAuctionsByArtworkIdsAsync(IEnumerable<long> artworkIds)
+        {
+            return await _context.Auctions
+                .Include(a => a.Artwork)
+                    .ThenInclude(aw => aw.ArtworkImages)
+                .Include(a => a.Artwork.Seller)
+                .Where(a => a.DeletedAt == null && artworkIds.Contains(a.ArtworkId))
+                .ToListAsync();
+        }
     }
 }

@@ -51,7 +51,7 @@ export default function HomePage() {
               Discover the world's finest art
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 text-balance">
-              Connect with contemporary artists and collectors. Browse curated exhibitions, bid on auctions, and build
+              Connect with contemporary artists and collectors. Browse curated exhibitions, discover unique artworks, and build
               your personal collection.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -62,7 +62,7 @@ export default function HomePage() {
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild className="text-base bg-transparent">
-                <Link href="/auctions">View Auctions</Link>
+                <Link href="/login">Join to Bid</Link>
               </Button>
             </div>
           </div>
@@ -260,7 +260,7 @@ export default function HomePage() {
               Start your art collection today
             </h2>
             <p className="text-lg mb-8 max-w-2xl mx-auto text-balance opacity-90">
-              Join thousands of collectors and art enthusiasts. Browse exclusive works, participate in auctions, and
+              Join thousands of collectors and art enthusiasts. Browse exclusive works, connect with artists, and
               discover emerging artists.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

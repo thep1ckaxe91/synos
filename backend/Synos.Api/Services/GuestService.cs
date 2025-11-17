@@ -70,11 +70,7 @@ namespace Synos.Api.Services
 
             var detailDto = MapToGuestArtworkDetailDto(artwork);
 
-            // Get auction details if artwork is for auction
-            if (artwork.IsFor == ArtworkFor.Auction)
-            {
-                detailDto.AuctionDetails = await GetAuctionDetailsAsync(artworkId);
-            }
+            // Auction details are not available for guest users
 
             // Get related artworks (same category or same seller)
             detailDto.RelatedArtworks = (await GetRelatedArtworksAsync(artworkId, 5)).ToList();
@@ -420,55 +416,6 @@ namespace Synos.Api.Services
                 TotalCategories = totalCategories,
                 FeaturedArtworks = featuredArtworks.ToList(),
                 RecentArtworks = recentArtworks.ToList()
-            };
-        }
-
-        public async Task<IEnumerable<GuestArtworkDto>> GetActiveAuctionsAsync(int skip = 0, int take = 50)
-        {
-            var auctionArtworks = await _context.Auctions
-                .Include(a => a.Artwork)
-                    .ThenInclude(aw => aw.Category)
-                .Include(a => a.Artwork)
-                    .ThenInclude(aw => aw.Seller)
-                .Include(a => a.Artwork)
-                    .ThenInclude(aw => aw.ArtworkImages)
-                .Where(a => a.Status == AuctionStatus.Running)
-                .OrderByDescending(a => a.CreatedAt)
-                .Skip(skip)
-                .Take(take)
-                .Select(a => a.Artwork)
-                .ToListAsync();
-
-            return auctionArtworks.Select(MapToGuestArtworkDto);
-        }
-
-        public async Task<GuestAuctionDto?> GetAuctionDetailsAsync(long artworkId)
-        {
-            var auction = await _context.Auctions
-                .FirstOrDefaultAsync(a => a.ArtworkId == artworkId);
-
-            if (auction == null) return null;
-
-            var now = DateTime.UtcNow;
-            var isActive = auction.Status == AuctionStatus.Running && 
-                          auction.StartTime <= now && 
-                          auction.EndTime > now;
-
-            // Since the bidding system uses JSON files, we'll provide basic auction info
-            // without current bid details for guest users
-            return new GuestAuctionDto
-            {
-                Id = auction.Id,
-                StartTime = auction.StartTime,
-                EndTime = auction.EndTime,
-                StartingPrice = auction.StartingPrice,
-                ReservePrice = auction.ReservePrice,
-                MinimumIncrement = auction.MinimumIncrement,
-                Status = auction.Status.ToString(),
-                CurrentHighestBid = null, // Not accessible for guest users
-                BidCount = 0, // Not accessible for guest users
-                IsActive = isActive,
-                TimeRemaining = isActive ? auction.EndTime - now : null
             };
         }
 

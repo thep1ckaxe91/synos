@@ -96,9 +96,9 @@ namespace Synos.Api.Controllers
 
         // Auction Endpoints
         [HttpGet("auctions")]
-        public async Task<IActionResult> GetActiveAuctions()
+        public async Task<IActionResult> GetActiveAuctions([FromQuery] int skip = 0, [FromQuery] int take = 50)
         {
-            var auctions = await _buyerService.GetActiveAuctionsAsync();
+            var auctions = await _buyerService.GetActiveAuctionsAsync(skip, take);
             return Ok(auctions);
         }
 
