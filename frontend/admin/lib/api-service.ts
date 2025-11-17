@@ -63,7 +63,6 @@ class ApiService {
     }
   }
 
-  // Auth methods
   async login(email: string, password: string): Promise<{ token: string; admin: any; success: boolean }> {
     return this.makeRequest(API_ENDPOINTS.admin.login, {
       method: 'POST',
@@ -83,7 +82,6 @@ class ApiService {
     return this.makeRequest(`${API_ENDPOINTS.admin.activities}?count=${count}`)
   }
 
-  // Member methods
   async getMembers(params: {
     skip?: number
     take?: number
@@ -121,7 +119,6 @@ class ApiService {
     })
   }
 
-  // Artwork methods
   async getArtworks(params: {
     skip?: number
     take?: number
@@ -192,7 +189,6 @@ class ApiService {
     })
   }
 
-  // Transaction methods
   async getTransactions(params: {
     skip?: number
     take?: number
@@ -231,7 +227,6 @@ class ApiService {
     return this.makeRequest(endpoint)
   }
 
-  // Purchase Request methods
   async getPurchaseRequests(params: {
     page?: number
     pageSize?: number
@@ -264,7 +259,6 @@ class ApiService {
     })
   }
 
-  // Exhibition methods
   async getExhibitions(params: {
     skip?: number
     take?: number
@@ -328,17 +322,14 @@ class ApiService {
     });
 }
 
-  // Category methods
   async getCategories(): Promise<any[]> {
     return this.makeRequest(API_ENDPOINTS.guest.categories)
   }
 
-  // Statistics methods
   async getStatistics(): Promise<any> {
     return this.makeRequest(API_ENDPOINTS.guest.statistics)
   }
 
-  // Analytics methods
   async getPopularArtworks(count: number = 10): Promise<any[]> {
     return this.makeRequest(`${API_ENDPOINTS.admin.popularArtworks}?count=${count}`)
   }

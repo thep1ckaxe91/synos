@@ -20,9 +20,6 @@ namespace Synos.Api.Controllers
             _logger = logger;
         }
 
-        // ===========================================
-        // AUTHENTICATION ENDPOINTS
-        // ===========================================
 
         /// <summary>
         /// Admin login
@@ -106,9 +103,6 @@ namespace Synos.Api.Controllers
             }
         }
 
-        // ===========================================
-        // MEMBER MANAGEMENT ENDPOINTS
-        // ===========================================
 
         /// <summary>
         /// Get all members for admin view
@@ -212,9 +206,6 @@ namespace Synos.Api.Controllers
             }
         }
 
-        // ===========================================
-        // ARTWORK MANAGEMENT ENDPOINTS
-        // ===========================================
 
         /// <summary>
         /// Get all artworks for admin view
@@ -424,9 +415,6 @@ namespace Synos.Api.Controllers
             }
         }
 
-        // ===========================================
-        // TRANSACTION MANAGEMENT ENDPOINTS
-        // ===========================================
 
         /// <summary>
         /// Get all transactions for admin monitoring
@@ -495,9 +483,6 @@ namespace Synos.Api.Controllers
             }
         }
 
-        // ===========================================
-        // EXHIBITION MANAGEMENT ENDPOINTS
-        // ===========================================
 
         /// <summary>
         /// Get all exhibitions for admin view

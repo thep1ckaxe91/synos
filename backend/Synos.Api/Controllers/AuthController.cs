@@ -48,7 +48,6 @@ namespace Synos.Api.Controllers
             if (member == null)
                 return NotFound(new { message = "Member not found" });
 
-            // Get member entity for token generation
             var memberRepository = HttpContext.RequestServices.GetRequiredService<Repositories.IMemberRepository>();
             var memberEntity = await memberRepository.GetMemberByIdAsync(memberId);
             
@@ -88,8 +87,6 @@ namespace Synos.Api.Controllers
         [RequireAuth]
         public IActionResult RevokeToken()
         {
-            // In a production system, you would add the token to a blacklist
-            // For now, just return success as logout is handled client-side
             return Ok(new { message = "Token revoked successfully. Please remove token from client storage." });
         }
 
